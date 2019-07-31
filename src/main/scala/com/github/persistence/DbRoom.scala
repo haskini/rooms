@@ -1,29 +1,31 @@
 package com.github.persistence
 
+import akka.http.scaladsl.model.DateTime
 import com.github.common._
 
 object DbRoom {
-    def GetRoom(data: GetRoomIn): Either[ErrorType, RoomOut] = {
+    def GetRoom(number: String): Either[ErrorType, DbModels.Room] = {
         Left(NotFound)
     }
     
-    def CreateRoom(data: CreateRoomIn): Option[ErrorType] = {
+    def GetRooms(skip: Int, limit: Int): Either[ErrorType, List[DbModels.Room]] = {
+        Right(List())
+    }
+    
+    // returns None if was created
+    def CreateRoom(newData: DbModels.Room): Option[ErrorType] = {
         None
     }
     
-    def BookRoom(data: BookRoomIn): Option[ErrorType] = {
+    def DeleteRoom(number: String): Option[ErrorType] = {
         None
     }
     
-    def FreeRoom(data: FreeRoomIn): Option[ErrorType] = {
+    def BookRoom(number: String, newData: DbModels.Booking): Option[ErrorType] = {
         None
     }
     
-    def DeleteRoom(data: DeleteRoomIn): Option[ErrorType] = {
+    def FreeRoom(number: String, start: DateTime): Option[ErrorType] = {
         None
-    }
-    
-    def GetRooms(): Either[ErrorType, GetRoomsOut]  = {
-        Right(GetRoomsOut(List()))
     }
 }
