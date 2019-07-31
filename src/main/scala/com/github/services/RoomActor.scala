@@ -1,4 +1,4 @@
-package com.github.common
+package com.github.services
 
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.http.scaladsl.model.DateTime

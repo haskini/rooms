@@ -8,14 +8,11 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.{delete, get, post}
 import akka.http.scaladsl.server.directives.PathDirectives.path
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
-import akka.pattern.ask
 import akka.util.Timeout
-import com.github.common.UserActor._
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
-trait UserRoutes extends JsonSupport {
+trait UserRoutes {
     
     // we leave these abstract, since they will be provided by the App
     implicit def system: ActorSystem

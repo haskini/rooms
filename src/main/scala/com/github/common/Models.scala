@@ -4,6 +4,7 @@ package com.github.common
 
 final case class dbUser(email: String, name: String, isAdmin: String, password: String)
 final case class GetUserIn(email: String)
+final case class GetUsersIn(page: Int, limit: Int)
 final case class CheckPasswordIn(email: String, password: String)
 final case class CreateUserIn(email: String, name: String, isAdmin: String, password: String)
 final case class UpdateUserIn(oldEmail: String, email: String, name: String, isAdmin: String)

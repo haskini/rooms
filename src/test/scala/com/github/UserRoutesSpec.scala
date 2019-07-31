@@ -5,7 +5,8 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.github.api.UserRoutes
-import com.github.common.{GetUserOut, UserActor}
+import com.github.common.GetUserOut
+import com.github.services.UserActor
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
 
