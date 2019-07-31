@@ -4,12 +4,14 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
+import com.github.api.UserRoutes
+import com.github.common.UserActor
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object QuickstartServer extends App with UserRoutes {
+object ApiServer extends App with UserRoutes {
     
     // set up ActorSystem and other dependencies here
     implicit val system: ActorSystem = ActorSystem("helloAkkaHttpServer")
@@ -17,7 +19,7 @@ object QuickstartServer extends App with UserRoutes {
     implicit val executionContext: ExecutionContext = system.dispatcher
     // from the UserRoutes trait
     lazy val routes: Route = userRoutes
-    val userRegistryActor: ActorRef = system.actorOf(UserRegistryActor.props, "userRegistryActor")
+    val userRegistryActor: ActorRef = system.actorOf(UserActor.props, "userRegistryActor")
     val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", 4567)
     
     serverBinding.onComplete {

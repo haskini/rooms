@@ -4,6 +4,8 @@ import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.github.api.UserRoutes
+import com.github.common.{GetUserOut, UserActor}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
 
@@ -15,7 +17,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
     // We use the real UserRegistryActor to test it while we hit the Routes,
     // but we could "mock" it by implementing it in-place or by using a TestProbe()
     override val userRegistryActor: ActorRef =
-    system.actorOf(UserRegistryActor.props, "userRegistry")
+    system.actorOf(UserActor.props, "userRegistry")
     
     
     "UserRoutes" should {
@@ -35,7 +37,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
         }
         
         "be able to add users (POST /users)" in {
-            val user = User("Kapi", 42, "jp")
+            val user = GetUserOut("Kapi", "?", "jp", "")
             val userEntity = Marshal(user).to[MessageEntity].futureValue // futureValue is from ScalaFutures
             
             // using the RequestBuilding DSL:
