@@ -4,12 +4,12 @@ import com.github.common._
 
 object DbUser {
     
-    def GetUser(data: GetUserIn): Either[ErrorType, Int] = {
+    def GetUser(data: GetUserIn): Either[ErrorType, GetUserOut] = {
         Left(NotFound)
     }
     
-    def GetUsers(): GetUsersOut = {
-        GetUsersOut(List())
+    def GetUsers(): Either[ErrorType, GetUsersOut] = {
+        Right(GetUsersOut(List()))
     }
     
     // returns None if correct
