@@ -1,13 +1,7 @@
 package com.github.services
 
 import akka.actor.{Actor, ActorLogging, Props}
-import akka.http.scaladsl.model.DateTime
-
-final case class Booking(time: DateTime, owner: String)
-
-final case class Room(number: String, bookings: Seq[Booking])
-
-final case class Rooms(rooms: Seq[Room])
+import com.github.common._
 
 object RoomActor {
     
@@ -15,28 +9,23 @@ object RoomActor {
     
     final case class ActionPerformed(message: String)
     
-    final case class GetRoom(number: String)
+    final case class GetRoom(data: InModels.GetRoom)
+    final case class CreateRoom(data: InModels.CreateRoom)
+    final case class DeleteRoom(data: InModels.DeleteRoom)
     
-    final case class CreateRoom(room: Room)
-    
-    final case class BookRoom(number: String, booking: Booking)
-    
-    final case class FreeRoom(number: String, time: DateTime)
-    
-    final case class DeleteRoom(number: String)
-    
-    final case object GetRooms
+    final case class GetRooms(data: InModels.GetRooms)
+
+    final case class BookRoom(data: InModels.BookRoom)
+    final case class FreeRoom(data: InModels.FreeRoom)
     
 }
 
 class RoomActor extends Actor with ActorLogging {
     import RoomActor._
     
-    var rooms = Set.empty[Room]
-    
     def receive: Receive = {
-        case GetRooms =>
-            sender() ! Rooms(rooms.toSeq)
+        case GetRooms(data) =>
+            sender() ! ActionPerformed(s"some rooms on page ${data.page} with limit ${data.limit}")
         // TODO: Add all case classes
     }
 }

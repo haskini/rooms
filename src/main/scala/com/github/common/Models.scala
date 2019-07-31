@@ -2,41 +2,61 @@ package com.github.common
 
 import akka.http.scaladsl.model.DateTime
 
-// COMMON MODELS
-final case class User(email: String, password: String, name: String, isAdmin: Boolean)
-
-final case class Booking(time: DateTime, owner: String)
-final case class Room(number: String, bookings: Seq[Booking])
-final case class Rooms(rooms: Seq[Room])
-
 // IN MODELS
 
-final case class GetUserIn(email: String)
-final case class GetUsersIn(page: Int, limit: Int)
-final case class CheckPasswordIn(email: String, password: String)
-final case class CreateUserIn(user: User)
-final case class UpdateUserIn(oldEmail: String, email: String, name: String, isAdmin: Boolean)
-final case class UpdatePasswordIn(email: String, oldPassword: String, newPassword: String)
-final case class DeleteUserIn(email: String, password: String)
-
-final case class GetRoomIn(number: Int)
-final case class CreateRoomIn(room: Room)
-final case class BookRoomIn(number: String, booking: Booking)
-final case class FreeRoomIn(number: String, time: DateTime)
-final case class DeleteRoomIn(number: String)
+case object InModels {
+    // User
+    final case class GetUser(email: String)
+    final case class GetUsers(page: Int, limit: Int)
+    final case class CheckPassword(email: String, password: String)
+    final case class CreateUser(email: String, password: String, name: String, isAdmin: Boolean)
+    final case class UpdateUser(oldEmail: String, email: String, name: String, isAdmin: Boolean)
+    final case class UpdatePassword(email: String, oldPassword: String, newPassword: String)
+    final case class DeleteUser(email: String, password: String)
+    
+    // Room
+    final case class GetRoom(number: Int)
+    final case class GetRooms(page: Int, limit: Int)
+    final case class CreateRoom(number: String)
+    final case class BookRoom(number: String, start: DateTime, stop: DateTime, userEmail: String)
+    final case class FreeRoom(number: String, start: DateTime)
+    final case class DeleteRoom(number: String)
+}
 
 // OUT MODELS
 
-final case class GetUserOut(user: User)
-final case class GetUsersOut(users: List[User])
+case object OutModels {
+    // Helpers
+    final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
+    
+    // User
+    final case class GetUser(email: String, name: String, isAdmin: Boolean)
+    final case class GetUsers(users: List[GetUser])
+    
+    // Room
+    final case class GetRoom(number: String, bookings: List[OutModels.Booking])
+    final case class GetRooms(rooms: List[GetRoom])
+}
 
-final case class RoomOut(room: Room)
-final case class GetRoomsOut(rooms: List[Room])
+// DB MODELS
+
+case object DbModels {
+    // Helpers
+    final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
+    
+    // Real data
+    final case class User(email: String, passHash: String, name: String, isAdmin: Boolean)
+    final case class Room(number: String, bookings: List[DbModels.Booking])
+}
 
 // ERRORS
 
 sealed trait ErrorType
-final case class DbError(msg: String) extends ErrorType
+
 case object NotFound extends ErrorType
-case object PasswordInvalid extends ErrorType
 case object AlreadyExist extends ErrorType
+
+case object EmailInvalid extends ErrorType
+case object PasswordInvalid extends ErrorType
+
+final case class DbError(msg: String) extends ErrorType
