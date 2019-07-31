@@ -1,7 +1,8 @@
-package com.github
+package com.github.api
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.github.UserRegistryActor.ActionPerformed
+import com.github.common.UserActor.ActionPerformed
+import com.github.common.{User, Users}
 import spray.json.DefaultJsonProtocol
 
 trait JsonSupport extends SprayJsonSupport {
