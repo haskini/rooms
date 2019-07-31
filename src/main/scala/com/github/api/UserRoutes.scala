@@ -11,7 +11,6 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
 import akka.util.Timeout
 import com.github.common.UserActor._
-import com.github.common.{User, Users}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -38,7 +37,7 @@ trait UserRoutes extends JsonSupport {
                             },
                             // TODO: This method creates records about new user and sends auth cookie to user
                             post {
-                                entity(as[User]) { user =>
+                                entity(as[String]) { _ =>
                                     rejectEmptyResponse {
                                         complete((StatusCodes.OK, "OK"))
                                     }
@@ -78,10 +77,13 @@ trait UserRoutes extends JsonSupport {
                         concat(
                             // TODO: This method gives away user data by required email
                             get {
-                                val maybeUser: Future[Option[User]] =
-                                    (userRegistryActor ? GetUser(email)).mapTo[Option[User]]
+                                //val maybeUser: Future[Option[User]] =
+                                //    (userRegistryActor ? GetUser(email)).mapTo[Option[User]]
+                                //rejectEmptyResponse {
+                                //   complete(maybeUser)
+                                //}
                                 rejectEmptyResponse {
-                                    complete(maybeUser)
+                                    complete((StatusCodes.OK, "OK"))
                                 }
                             },
                         )
@@ -95,9 +97,12 @@ trait UserRoutes extends JsonSupport {
                             // TODO: This method gives away users data limited with {limit} entries per page
                             //  and offset of {page} from the first page
                             get {
-                                val users: Future[Users] =
-                                    (userRegistryActor ? GetUsers).mapTo[Users]
-                                complete(users)
+                                //val users: Future[Users] =
+                                //    (userRegistryActor ? GetUsers).mapTo[Users]
+                                //complete(users)
+                                rejectEmptyResponse {
+                                    complete((StatusCodes.OK, "OK"))
+                                }
                             },
                         )
                     },
