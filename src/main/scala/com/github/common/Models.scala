@@ -29,6 +29,9 @@ case object OutModels {
     // Helpers
     final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
     
+    // Messages
+    final case class Message(code: Int, message: String)
+    
     // User
     final case class GetUser(email: String, name: String, isAdmin: Boolean)
     final case class GetUsers(users: List[GetUser])
@@ -60,3 +63,24 @@ case object EmailInvalid extends ErrorType
 case object PasswordInvalid extends ErrorType
 
 final case class DbError(msg: String) extends ErrorType
+
+// Api Messages
+
+object Messages {
+    import OutModels.Message
+    
+    val ok: Message = Message(0, "ok")
+    val created: Message = Message(1, "created")
+    val updated: Message = Message(2, "updated")
+    val deleted: Message = Message(3, "deleted")
+}
+
+object Errors {
+    import OutModels.Message
+    
+    val userNotFound: Message = Message(-1, "user not found")
+    val invalidPassword: Message = Message(-2, "invalid password")
+    val userExists: Message = Message(-3, "user already exists")
+    val unknown: Message = Message(-98, "unknown error")
+    def db(msg: String): Message = Message(-99, s"db error: $msg")
+}
