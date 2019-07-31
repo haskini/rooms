@@ -70,7 +70,7 @@ class UserActor extends Actor with ActorLogging {
                     }
             }
         case UpdateUser(input) =>
-            DbUser.GetUser(input.oldEmail) match {
+            DbUser.GetUser(Jwt.email) match {
                 case Right(user) =>
                     DbUser.UpdateUser(user.email, DbModels.User(
                         email = input.email,
@@ -93,7 +93,7 @@ class UserActor extends Actor with ActorLogging {
                     }
             }
         case UpdatePassword(input) =>
-            DbUser.GetUser(input.email) match {
+            DbUser.GetUser(Jwt.email) match {
                 case Right(user) =>
                     if (Helpers.HashPassword(input.oldPassword) == user.passHash)
                         DbUser.UpdateUser(user.email, DbModels.User(
@@ -119,7 +119,7 @@ class UserActor extends Actor with ActorLogging {
                     }
             }
         case DeleteUser(input) =>
-            DbUser.GetUser(input.email) match {
+            DbUser.GetUser(Jwt.email) match {
                 case Right(user) =>
                     if (Helpers.HashPassword(input.password) == user.passHash)
                         DbUser.DeleteUser(user.email) match {

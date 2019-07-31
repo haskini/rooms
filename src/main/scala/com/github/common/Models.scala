@@ -2,6 +2,18 @@ package com.github.common
 
 import akka.http.scaladsl.model.DateTime
 
+trait JwtTrait {
+    val email: String
+    val name: String
+    val isAdmin: Boolean
+}
+
+object Jwt extends JwtTrait {
+    val email = "test@mail.ru"
+    val name = "Test"
+    val isAdmin = true
+}
+
 // IN MODELS
 
 case object InModels {
@@ -10,15 +22,15 @@ case object InModels {
     final case class GetUsers(page: Int, limit: Int)
     final case class CheckPassword(email: String, password: String)
     final case class CreateUser(email: String, password: String, name: String, isAdmin: Boolean)
-    final case class UpdateUser(oldEmail: String, email: String, name: String, isAdmin: Boolean)
-    final case class UpdatePassword(email: String, oldPassword: String, newPassword: String)
-    final case class DeleteUser(email: String, password: String)
+    final case class UpdateUser(email: String, name: String, isAdmin: Boolean)
+    final case class UpdatePassword(oldPassword: String, newPassword: String)
+    final case class DeleteUser(password: String)
     
     // Room
-    final case class GetRoom(number: Int)
+    final case class GetRoom(number: String)
     final case class GetRooms(page: Int, limit: Int)
     final case class CreateRoom(number: String)
-    final case class BookRoom(number: String, start: DateTime, stop: DateTime, userEmail: String)
+    final case class BookRoom(number: String, start: DateTime, stop: DateTime)
     final case class FreeRoom(number: String, start: DateTime)
     final case class DeleteRoom(number: String)
 }
@@ -79,8 +91,16 @@ object Errors {
     import OutModels.Message
     
     val userNotFound: Message = Message(-1, "user not found")
-    val invalidPassword: Message = Message(-2, "invalid password")
-    val userExists: Message = Message(-3, "user already exists")
+    val userExists: Message = Message(-2, "user already exists")
+    val roomNotFound: Message = Message(-3, "room not found")
+    val roomExists: Message = Message(-4, "room already exists")
+    val roomBusy: Message = Message(-5, "at selected time room already busy")
+    val bookingNotFound: Message = Message(-6, "booking not found")
+    val noPermissions: Message = Message(-7, "you have not got permissions")
+    
+    val invalidEmail: Message = Message(-10, "invalid password")
+    val invalidPassword: Message = Message(-11, "invalid password")
+    
     val unknown: Message = Message(-98, "unknown error")
     def db(msg: String): Message = Message(-99, s"db error: $msg")
 }
