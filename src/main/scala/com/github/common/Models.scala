@@ -107,8 +107,9 @@ object Errors {
     val noPermissions: Error = Error(-7, "you have not got permissions")
     
     val invalidJson: Error = Error(-10, "invalid json")
-    val invalidEmail: Error = Error(-11, "invalid password")
-    val invalidPassword: Error = Error(-12, "invalid password")
+    val invalidParams: Error = Error(-11, "invalid params")
+    val invalidEmail: Error = Error(-12, "invalid email")
+    val invalidPassword: Error = Error(-13, "invalid password")
     
     val signedIn: Error = Error(-20, "already signed out")
     val signedOut: Error = Error(-21, "signed out")
