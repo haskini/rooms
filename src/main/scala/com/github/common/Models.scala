@@ -90,8 +90,8 @@ object Messages {
     val updated: Message = Message(2, "updated")
     val deleted: Message = Message(3, "deleted")
     
-    val signedIn: Error = Errors(10, "signed in")
-    val signedOut: Error = Errors(11, "signed out")
+    val signedIn: Message = Message(10, "signed in")
+    val signedOut: Message = Message(11, "signed out")
     
 }
 
@@ -110,8 +110,8 @@ object Errors {
     val invalidEmail: Error = Error(-11, "invalid password")
     val invalidPassword: Error = Error(-12, "invalid password")
     
-    val signedIn: Error = Errors(-20, "already signed out")
-    val signedOut: Error = Errors(-21, "signed out")
+    val signedIn: Error = Error(-20, "already signed out")
+    val signedOut: Error = Error(-21, "signed out")
     
     val unknown: Error = Error(-98, "unknown error")
     def db(msg: String): Error = Error(-99, s"db error: $msg")

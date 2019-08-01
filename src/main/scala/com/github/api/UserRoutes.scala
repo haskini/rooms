@@ -285,9 +285,9 @@ trait UserRoutes {
       },
     )
   
-  implicit val formats: DefaultFormats.type = DefaultFormats
+  implicit val userFormats: DefaultFormats.type = DefaultFormats
   // Required by the `ask` (?) method below
-  implicit lazy val timeout: Timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration
+  implicit lazy val userTimeout: Timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration
   // other dependencies that UserRoutes use
   def userActor: ActorRef
 }
