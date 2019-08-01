@@ -2,17 +2,14 @@ package com.github.api
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.{delete, get, post}
-import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
 import com.github.common._
 import com.github.services.UserActor._
 import org.json4s._
-import org.json4s.jackson.JsonMethods._
-import org.json4s.jackson.Serialization.write
+import org.json4s.native.JsonMethods._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -22,290 +19,206 @@ trait UserRoutes {
   
   // TODO: Handle entity errors
   lazy val userRoutes: Route =
-    concat(
-      pathPrefix("user") {
-        concat(
-          pathEnd {
-            concat(
-              get {
-                log.info("[GET] /user")
-                if (!checkAuth()) {
-                  val outJson = write(Errors.signedOut)
-                  log.debug(outJson)
-                  complete((StatusCodes.Unauthorized, outJson))
-                }
-                else
-                  parameters('email.?) { input =>
-                    var email = ""
-                    input match {
-                      case Some(param) => email = param
-                      case None => email = jwt.email
-                    }
-                    val answer = userActor ? GetUser(InModels.GetUser(email))
-                    val userFuture: Future[OutModels.GetUser] = answer.mapTo[OutModels.GetUser]
-                    onComplete(userFuture) {
-                      case Success(user) =>
-                        val outJson = write(user)
-                        log.debug(outJson)
-                        complete((StatusCodes.OK, outJson))
-                      case Failure(_) =>
-                        val messageFuture: Future[OutModels.MessageWithCode] =
-                          answer.mapTo[OutModels.MessageWithCode]
-                        onComplete(messageFuture) {
-                          case Success(msg) =>
-                            val outJson = write(msg)
-                            log.debug(outJson)
-                            complete((StatusCodes.OK, outJson))
-                          case Failure(failure) =>
-                            val outJson = write(failure)
-                            log.error(outJson)
-                            complete((StatusCodes.InternalServerError, outJson))
-                        }
-                    }
+    pathPrefix("user") {
+      pathEnd {
+        get {
+          log.info("[GET] /user")
+          if (!checkAuth()) {
+            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+          }
+          else
+            parameters('email.?) { input =>
+              val email = input match {
+                case Some(param) => param
+                case None => jwt.email
+              }
+              val answer = userActor ? GetUser(InModels.GetUser(email))
+              val userFuture: Future[OutModels.GetUser] = answer.mapTo[OutModels.GetUser]
+              onComplete(userFuture) {
+                case Success(user) =>
+                  completeWithLog(user, StatusCodes.OK)
+                case Failure(_) =>
+                  val messageFuture: Future[OutModels.MessageWithCode] =
+                    answer.mapTo[OutModels.MessageWithCode]
+                  onComplete(messageFuture) {
+                    case Success(msg) =>
+                      completeWithLog(msg, StatusCodes.OK)
+                    case Failure(failure) =>
+                      completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
                   }
-              },
-              post {
-                log.info("[POST] /user")
-                if (!checkAuth()) {
-                  val outJson = write(Errors.signedOut)
-                  log.debug(outJson)
-                  complete((StatusCodes.Unauthorized, outJson))
-                }
-                else
-                  entity(as[String]) { data =>
-                    parse(data).extractOpt[InModels.CreateUser] match {
-                      case Some(input) =>
-                        val result: Future[OutModels.MessageWithCode] =
-                          (userActor ? CreateUser(input)).mapTo[OutModels.MessageWithCode]
-                        onComplete(result) {
-                          case Success(msg) =>
-                            msg match {
-                              case OutModels.Error(_, _) =>
-                                val outJson = write(msg)
-                                log.debug(outJson)
-                                complete((StatusCodes.BadRequest, outJson))
-                              case OutModels.Message(_, _) =>
-                                setCookie(HttpCookie(jwtCookieName, value = generateJwt(JwtModel(
-                                  email = input.email,
-                                  name = input.name,
-                                  isAdmin = input.isAdmin
-                                )))) {
-                                  val outJson = write(msg)
-                                  log.debug(outJson)
-                                  complete((StatusCodes.Created, outJson))
-                                }
-                            }
-                          case Failure(failure) =>
-                            val outJson = write(failure)
-                            log.error(outJson)
-                            complete((StatusCodes.InternalServerError, outJson))
-                        }
-                      case None =>
-                        val outJson = write(Errors.invalidJson)
-                        log.debug(outJson)
-                        complete((StatusCodes.BadRequest, outJson))
-                    }
+              }
+            }
+        } ~ post {
+          log.info("[POST] /user")
+          if (!checkAuth()) {
+            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+          }
+          else
+            entity(as[String]) { data =>
+              parse(data).extractOpt[InModels.CreateUser] match {
+                case Some(input) =>
+                  val result: Future[OutModels.MessageWithCode] =
+                    (userActor ? CreateUser(input)).mapTo[OutModels.MessageWithCode]
+                  onComplete(result) {
+                    case Success(msg) =>
+                      msg match {
+                        case OutModels.Error(_, _) =>
+                          completeWithLog(msg, StatusCodes.BadRequest)
+                        case OutModels.Message(_, _) =>
+                          setJwt(JwtModel(
+                            email = input.email,
+                            name = input.name,
+                            isAdmin = input.isAdmin
+                          )) {
+                            completeWithLog(msg, StatusCodes.Created)
+                          }
+                      }
+                    case Failure(failure) =>
+                      completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
                   }
-              },
-              put {
-                log.info("[PUT] /user")
-                if (!checkAuth()) {
-                  val outJson = write(Errors.signedOut)
-                  log.debug(outJson)
-                  complete((StatusCodes.Unauthorized, outJson))
-                }
-                else
-                  entity(as[String]) { data =>
-                    parse(data).extractOpt[InModels.UpdateUser] match {
-                      case Some(input) =>
-                        val result: Future[OutModels.MessageWithCode] =
-                          (userActor ? UpdateUser(jwt, input)).mapTo[OutModels.MessageWithCode]
-                        onComplete(result) {
-                          case Success(msg) =>
-                            msg match {
-                              case OutModels.Error(_, _) =>
-                                val outJson = write(msg)
-                                log.debug(outJson)
-                                complete((StatusCodes.BadRequest, outJson))
-                              case OutModels.Message(_, _) =>
-                                setCookie(HttpCookie(jwtCookieName, value = generateJwt(JwtModel(
-                                  email = input.email,
-                                  name = input.name,
-                                  isAdmin = input.isAdmin
-                                )))) {
-                                  val outJson = write(msg)
-                                  log.debug(outJson)
-                                  complete((StatusCodes.Created, outJson))
-                                }
-                            }
-                          case Failure(failure) =>
-                            val outJson = write(failure)
-                            log.error(outJson)
-                            complete((StatusCodes.InternalServerError, outJson))
-                        }
-                      case None =>
-                        val outJson = write(Errors.invalidJson)
-                        log.debug(outJson)
-                        complete((StatusCodes.BadRequest, outJson))
-                    }
+                case None =>
+                  completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+              }
+            }
+        } ~ put {
+          log.info("[PUT] /user")
+          if (!checkAuth()) {
+            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+          }
+          else
+            entity(as[String]) { data =>
+              parse(data).extractOpt[InModels.UpdateUser] match {
+                case Some(input) =>
+                  val result: Future[OutModels.MessageWithCode] =
+                    (userActor ? UpdateUser(jwt, input)).mapTo[OutModels.MessageWithCode]
+                  onComplete(result) {
+                    case Success(msg) =>
+                      msg match {
+                        case OutModels.Error(_, _) =>
+                          completeWithLog(msg, StatusCodes.BadRequest)
+                        case OutModels.Message(_, _) =>
+                          setJwt(JwtModel(
+                            email = input.email,
+                            name = input.name,
+                            isAdmin = input.isAdmin
+                          )) {
+                            completeWithLog(msg, StatusCodes.Created)
+                          }
+                      }
+                    case Failure(failure) =>
+                      completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
                   }
-              },
-              delete {
-                log.info("[DELETE] /user")
-                if (!checkAuth()) {
-                  val outJson = write(Errors.signedOut)
-                  log.debug(outJson)
-                  complete((StatusCodes.Unauthorized, outJson))
-                }
-                else
-                  entity(as[String]) { data =>
-                    parse(data).extractOpt[InModels.DeleteUser] match {
-                      case Some(input) =>
-                        val result: Future[OutModels.MessageWithCode] =
-                          (userActor ? DeleteUser(jwt, input)).mapTo[OutModels.MessageWithCode]
-                        onComplete(result) {
-                          case Success(msg) =>
-                            msg match {
-                              case OutModels.Error(_, _) =>
-                                val outJson = write(msg)
-                                log.debug(outJson)
-                                complete((StatusCodes.BadRequest, outJson))
-                              case OutModels.Message(_, _) =>
-                                deleteCookie(jwtCookieName) {
-                                  val outJson = write(msg)
-                                  log.debug(outJson)
-                                  complete((StatusCodes.OK, outJson))
-                                }
-                            }
-                          case Failure(failure) =>
-                            val outJson = write(failure)
-                            log.error(outJson)
-                            complete((StatusCodes.InternalServerError, outJson))
-                        }
-                      case None =>
-                        val outJson = write(Errors.invalidJson)
-                        log.debug(outJson)
-                        complete((StatusCodes.BadRequest, outJson))
-                    }
+                case None =>
+                  completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+              }
+            }
+        } ~ delete {
+          log.info("[DELETE] /user")
+          if (!checkAuth()) {
+            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+          }
+          else
+            entity(as[String]) { data =>
+              parse(data).extractOpt[InModels.DeleteUser] match {
+                case Some(input) =>
+                  val result: Future[OutModels.MessageWithCode] =
+                    (userActor ? DeleteUser(jwt, input)).mapTo[OutModels.MessageWithCode]
+                  onComplete(result) {
+                    case Success(msg) =>
+                      msg match {
+                        case OutModels.Error(_, _) =>
+                          completeWithLog(msg, StatusCodes.BadRequest)
+                        case OutModels.Message(_, _) =>
+                          resetJwt() {
+                            completeWithLog(msg, StatusCodes.OK)
+                          }
+                      }
+                    case Failure(failure) =>
+                      completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
                   }
-              },
-            )
-          },
-        )
-      },
-      pathPrefix("users") {
-        concat(
-          pathEnd {
-            concat(
-              get {
-                log.info("[GET] /users")
-                if (!checkAuth()) {
-                  val outJson = write(Errors.signedOut)
-                  log.debug(outJson)
-                  complete((StatusCodes.Unauthorized, outJson))
-                }
-                else
-                  parameters('page.as[Int] ? 1, 'limit.as[Int] ? 10) { (page, limit) =>
-                    val result: Future[OutModels.GetUsers] =
-                      (userActor ? GetUsers(InModels.GetUsers(page, limit))).mapTo[OutModels.GetUsers]
-                    onComplete(result) {
-                      case Success(users) =>
-                        val outJson = write(users)
-                        log.debug(outJson)
-                        complete((StatusCodes.OK, outJson))
-                      case Failure(failure) =>
-                        val outJson = write(failure)
-                        log.error(outJson)
-                        complete((StatusCodes.InternalServerError, outJson))
-                    }
+                case None =>
+                  completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+              }
+            }
+        }
+      }
+    } ~ pathPrefix("users") {
+      pathEnd {
+        get {
+          log.info("[GET] /users")
+          if (!checkAuth()) {
+            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+          }
+          else
+            parameters('page.as[Int] ? 1, 'limit.as[Int] ? 10) { (page, limit) =>
+              val result: Future[OutModels.GetUsers] =
+                (userActor ? GetUsers(InModels.GetUsers(page, limit))).mapTo[OutModels.GetUsers]
+              onComplete(result) {
+                case Success(users) =>
+                  completeWithLog(users, StatusCodes.OK)
+                case Failure(failure) =>
+                  completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
+              }
+            }
+        }
+      }
+    } ~ pathPrefix("session") {
+      pathEnd {
+        get {
+          log.info("[GET] /session")
+          if (checkAuth()) {
+            completeWithLog(Messages.signedIn, StatusCodes.OK)
+          }
+          else {
+            completeWithLog(Messages.signedOut, StatusCodes.Unauthorized)
+          }
+        } ~ post {
+          log.info("[POST] /session")
+          if (!checkAuth()) {
+            completeWithLog(Errors.signedIn, StatusCodes.BadRequest)
+          }
+          else
+            entity(as[String]) { data =>
+              parse(data).extractOpt[InModels.CheckPassword] match {
+                case Some(input) =>
+                  val answer = userActor ? CheckPassword(input)
+                  val userFuture: Future[OutModels.GetUser] = answer.mapTo[OutModels.GetUser]
+                  onComplete(userFuture) {
+                    case Success(user) =>
+                      setJwt(JwtModel(
+                        email = user.email,
+                        name = user.name,
+                        isAdmin = user.isAdmin
+                      )) {
+                        completeWithLog(Messages.ok, StatusCodes.OK)
+                      }
+                    case Failure(_) =>
+                      val messageFuture: Future[OutModels.MessageWithCode] =
+                        answer.mapTo[OutModels.MessageWithCode]
+                      onComplete(messageFuture) {
+                        case Success(msg) =>
+                          completeWithLog(msg, StatusCodes.BadRequest)
+                        case Failure(failure) =>
+                          completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
+                      }
                   }
-              },
-            )
-          },
-        )
-      },
-      pathPrefix("session") {
-        concat(
-          pathEnd {
-            concat(
-              get {
-                log.info("[GET] /session")
-                if (checkAuth()) {
-                  val outJson = write(Messages.signedIn)
-                  log.debug(outJson)
-                  complete((StatusCodes.OK, outJson))
-                }
-                else {
-                  val outJson = write(Messages.signedOut)
-                  log.debug(outJson)
-                  complete((StatusCodes.Unauthorized, outJson))
-                }
-              },
-              post {
-                log.info("[POST] /session")
-                if (!checkAuth()) {
-                  val outJson = write(Errors.signedIn)
-                  log.debug(outJson)
-                  complete((StatusCodes.BadRequest, outJson))
-                }
-                else
-                  entity(as[String]) { data =>
-                    parse(data).extractOpt[InModels.CheckPassword] match {
-                      case Some(input) =>
-                        val answer = userActor ? CheckPassword(input)
-                        val userFuture: Future[OutModels.GetUser] = answer.mapTo[OutModels.GetUser]
-                        onComplete(userFuture) {
-                          case Success(user) =>
-                            setCookie(HttpCookie(jwtCookieName, value = generateJwt(JwtModel(
-                              email = user.email,
-                              name = user.name,
-                              isAdmin = user.isAdmin
-                            )))) {
-                              val outJson = write(Messages.ok)
-                              log.debug(outJson)
-                              complete((StatusCodes.OK, outJson))
-                            }
-                          case Failure(_) =>
-                            val messageFuture: Future[OutModels.MessageWithCode] =
-                              answer.mapTo[OutModels.MessageWithCode]
-                            onComplete(messageFuture) {
-                              case Success(msg) =>
-                                val outJson = write(msg)
-                                log.debug(outJson)
-                                complete((StatusCodes.BadRequest, outJson))
-                              case Failure(failure) =>
-                                val outJson = write(failure)
-                                log.error(outJson)
-                                complete((StatusCodes.InternalServerError, outJson))
-                            }
-                        }
-                      case None =>
-                        val outJson = write(Errors.invalidJson)
-                        log.debug(outJson)
-                        complete((StatusCodes.BadRequest, outJson))
-                    }
-                  }
-              },
-              delete {
-                log.info("[DELETE] /session")
-                if (!checkAuth()) {
-                  val outJson = write(Errors.signedOut)
-                  log.debug(outJson)
-                  complete((StatusCodes.Unauthorized, outJson))
-                }
-                else {
-                  deleteCookie(jwtCookieName) {
-                    val outJson = write(Messages.signedOut)
-                    log.debug(outJson)
-                    complete((StatusCodes.OK, outJson))
-                  }
-                }
-              },
-            )
-          },
-        )
-      },
-    )
+                case None =>
+                  completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+              }
+            }
+        } ~ delete {
+          log.info("[DELETE] /session")
+          if (!checkAuth()) {
+            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+          }
+          else {
+            resetJwt() {
+              completeWithLog(Messages.signedOut, StatusCodes.OK)
+            }
+          }
+        }
+      }
+    }
   
   // other dependencies that UserRoutes use
   def userActor: ActorRef

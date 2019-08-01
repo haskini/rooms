@@ -3,6 +3,7 @@ lazy val akkaVersion = "2.6.0-M5"
 lazy val mongoDriverVersion = "2.6.0"
 //lazy val mongoCasbahVersion = "3.1.1"
 lazy val json4sVersion = "3.6.7"
+lazy val jwtVersion = "3.1.0"
 
 lazy val root = (project in file(".")).
     settings(
@@ -20,7 +21,8 @@ lazy val root = (project in file(".")).
             "org.mongodb.scala" %% "mongo-scala-driver" % mongoDriverVersion,
             // "org.mongodb" %% "casbah-commons" % mongoCasbahVersion,
             
-            "org.json4s" %% "json4s-jackson" % json4sVersion,
+            "org.json4s" %% "json4s-native" % json4sVersion,
+            "com.pauldijou" %% "jwt-json4s-native" % jwtVersion,
             
             "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
             "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
