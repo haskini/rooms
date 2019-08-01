@@ -30,7 +30,7 @@ trait RoomRoutes {
             concat(
               get {
                 log.info("[GET] /room")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -59,12 +59,15 @@ trait RoomRoutes {
                               complete((StatusCodes.InternalServerError, outJson))
                           }
                       }
-                    case None => complete((StatusCodes.BadRequest, "Incorrect number!"))
+                    case None =>
+                      val outJson = write(Errors.invalidNumber)
+                      log.debug(outJson)
+                      complete((StatusCodes.BadRequest, outJson))
                   }
               },
               post {
                 log.info("[POST] /room")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -92,13 +95,16 @@ trait RoomRoutes {
                             log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
-                      case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
+                      case None =>
+                        val outJson = write(Errors.invalidJson)
+                        log.debug(outJson)
+                        complete((StatusCodes.BadRequest, outJson))
                     }
                   }
               },
               delete {
                 log.info("[DELETE] /room")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -126,7 +132,10 @@ trait RoomRoutes {
                             log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
-                      case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
+                      case None =>
+                        val outJson = write(Errors.invalidJson)
+                        log.debug(outJson)
+                        complete((StatusCodes.BadRequest, outJson))
                     }
                   }
               },
@@ -140,7 +149,7 @@ trait RoomRoutes {
             concat(
               post {
                 log.info("[POST] /booking")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -168,13 +177,16 @@ trait RoomRoutes {
                             log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
-                      case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
+                      case None =>
+                        val outJson = write(Errors.invalidJson)
+                        log.debug(outJson)
+                        complete((StatusCodes.BadRequest, outJson))
                     }
                   }
               },
               delete {
                 log.info("[DELETE] /booking")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -202,7 +214,10 @@ trait RoomRoutes {
                             log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
-                      case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
+                      case None =>
+                        val outJson = write(Errors.invalidJson)
+                        log.debug(outJson)
+                        complete((StatusCodes.BadRequest, outJson))
                     }
                   }
               },
@@ -216,7 +231,7 @@ trait RoomRoutes {
             concat(
               get {
                 log.info("[GET] /rooms")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))

@@ -4,11 +4,7 @@ import akka.http.scaladsl.model.DateTime
 
 // JWT MOCK
 
-trait JwtModel {
-    val email: String
-    val name: String
-    val isAdmin: Boolean
-}
+case class JwtModel(email: String, name: String, isAdmin: Boolean)
 
 // IN MODELS
 
@@ -104,6 +100,7 @@ object Errors {
     val invalidParams: Error = Error(-11, "invalid params")
     val invalidEmail: Error = Error(-12, "invalid email")
     val invalidPassword: Error = Error(-13, "invalid password")
+    val invalidNumber: Error = Error(-14, "invalid number")
     
     val signedIn: Error = Error(-20, "already signed out")
     val signedOut: Error = Error(-21, "signed out")

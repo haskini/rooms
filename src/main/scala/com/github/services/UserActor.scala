@@ -35,7 +35,7 @@ class UserActor extends Actor with ActorLogging {
       DbUser.GetUser(input.email) match {
         case Right(user) =>
           if (Helpers.HashPassword(input.password) == user.passHash)
-            sender() ! Messages.ok
+            sender() ! user
           else
             sender() ! Errors.invalidPassword
         case Left(error) =>
