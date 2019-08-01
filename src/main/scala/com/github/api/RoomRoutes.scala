@@ -39,32 +39,30 @@ trait RoomRoutes {
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
-                  entity(as[String]) { data =>
-                    parse(data).extractOpt[InModels.GetRoom] match {
-                      case Some(input) =>
-                        val answer = roomActor ? GetRoom(input)
-                        val roomFuture: Future[OutModels.GetRoom] = answer.mapTo[OutModels.GetRoom]
-                        onComplete(roomFuture) {
-                          case Success(room) =>
-                            val outJson = write(room)
-                            roomLog.debug(outJson)
-                            complete((StatusCodes.OK, outJson))
-                          case Failure(_) =>
-                            val messageFuture: Future[OutModels.MessageWithCode] =
-                              answer.mapTo[OutModels.MessageWithCode]
-                            onComplete(messageFuture) {
-                              case Success(room) =>
-                                val outJson = write(room)
-                                roomLog.debug(outJson)
-                                complete((StatusCodes.OK, outJson))
-                              case Failure(failure) =>
-                                val outJson = write(failure)
-                                roomLog.error(outJson)
-                                complete((StatusCodes.InternalServerError, outJson))
-                            }
-                        }
-                      case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
-                    }
+                  parameter('number.?) {
+                    case Some(number) =>
+                      val answer = roomActor ? GetRoom(InModels.GetRoom(number))
+                      val roomFuture: Future[OutModels.GetRoom] = answer.mapTo[OutModels.GetRoom]
+                      onComplete(roomFuture) {
+                        case Success(room) =>
+                          val outJson = write(room)
+                          roomLog.debug(outJson)
+                          complete((StatusCodes.OK, outJson))
+                        case Failure(_) =>
+                          val messageFuture: Future[OutModels.MessageWithCode] =
+                            answer.mapTo[OutModels.MessageWithCode]
+                          onComplete(messageFuture) {
+                            case Success(room) =>
+                              val outJson = write(room)
+                              roomLog.debug(outJson)
+                              complete((StatusCodes.OK, outJson))
+                            case Failure(failure) =>
+                              val outJson = write(failure)
+                              roomLog.error(outJson)
+                              complete((StatusCodes.InternalServerError, outJson))
+                          }
+                      }
+                    case None => complete((StatusCodes.BadRequest, "Incorrect number!"))
                   }
               },
               post {
@@ -208,6 +206,37 @@ trait RoomRoutes {
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
+                    }
+                  }
+              },
+            )
+          },
+        )
+      },
+      pathPrefix("rooms") {
+        concat(
+          pathEnd {
+            concat(
+              get {
+                roomLog.info("[GET] /rooms")
+                if (false) {
+                  val outJson = write(Errors.signedOut)
+                  roomLog.debug(outJson)
+                  complete((StatusCodes.Unauthorized, outJson))
+                }
+                else
+                  parameters('page.as[Int] ? 1, 'limit.as[Int] ? 10) { (page, limit) =>
+                    val result: Future[OutModels.GetRooms] =
+                      (roomActor ? GetRooms(InModels.GetRooms(page, limit))).mapTo[OutModels.GetRooms]
+                    onComplete(result) {
+                      case Success(rooms) =>
+                        val outJson = write(rooms)
+                        roomLog.debug(outJson)
+                        complete((StatusCodes.OK, outJson))
+                      case Failure(failure) =>
+                        val outJson = write(failure)
+                        roomLog.error(outJson)
+                        complete((StatusCodes.InternalServerError, outJson))
                     }
                   }
               },

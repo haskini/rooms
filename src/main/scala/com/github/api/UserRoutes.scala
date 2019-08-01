@@ -40,31 +40,32 @@ trait UserRoutes {
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
-                  entity(as[String]) { data =>
-                    parse(data).extractOpt[InModels.GetUser] match {
-                      case Some(input) =>
-                        val answer = userActor ? GetUser(input)
-                        val userFuture: Future[OutModels.GetUser] = answer.mapTo[OutModels.GetUser]
-                        onComplete(userFuture) {
+                  parameters('email.?) { input =>
+                    var email = ""
+                    input match {
+                      case Some(param) => email = param
+                      case None => email = Jwt.email
+                    }
+                    val answer = userActor ? GetUser(InModels.GetUser(email))
+                    val userFuture: Future[OutModels.GetUser] = answer.mapTo[OutModels.GetUser]
+                    onComplete(userFuture) {
+                      case Success(user) =>
+                        val outJson = write(user)
+                        userLog.debug(outJson)
+                        complete((StatusCodes.OK, outJson))
+                      case Failure(_) =>
+                        val messageFuture: Future[OutModels.MessageWithCode] =
+                          answer.mapTo[OutModels.MessageWithCode]
+                        onComplete(messageFuture) {
                           case Success(user) =>
                             val outJson = write(user)
                             userLog.debug(outJson)
                             complete((StatusCodes.OK, outJson))
-                          case Failure(_) =>
-                            val messageFuture: Future[OutModels.MessageWithCode] =
-                              answer.mapTo[OutModels.MessageWithCode]
-                            onComplete(messageFuture) {
-                              case Success(user) =>
-                                val outJson = write(user)
-                                userLog.debug(outJson)
-                                complete((StatusCodes.OK, outJson))
-                              case Failure(failure) =>
-                                val outJson = write(failure)
-                                userLog.error(outJson)
-                                complete((StatusCodes.InternalServerError, outJson))
-                            }
+                          case Failure(failure) =>
+                            val outJson = write(failure)
+                            userLog.error(outJson)
+                            complete((StatusCodes.InternalServerError, outJson))
                         }
-                      case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
                     }
                   }
               },
@@ -189,22 +190,18 @@ trait UserRoutes {
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
-                  entity(as[String]) { data =>
-                    parse(data).extractOpt[InModels.GetUsers] match {
-                      case Some(input) =>
-                        val result: Future[OutModels.GetUsers] =
-                          (userActor ? GetUsers(input)).mapTo[OutModels.GetUsers]
-                        onComplete(result) {
-                          case Success(users) =>
-                            val outJson = write(users)
-                            userLog.debug(outJson)
-                            complete((StatusCodes.OK, outJson))
-                          case Failure(failure) =>
-                            val outJson = write(failure)
-                            userLog.error(outJson)
-                            complete((StatusCodes.InternalServerError, outJson))
-                        }
-                      case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
+                  parameters('page.as[Int] ? 1, 'limit.as[Int] ? 10) { (page, limit) =>
+                    val result: Future[OutModels.GetUsers] =
+                      (userActor ? GetUsers(InModels.GetUsers(page, limit))).mapTo[OutModels.GetUsers]
+                    onComplete(result) {
+                      case Success(users) =>
+                        val outJson = write(users)
+                        userLog.debug(outJson)
+                        complete((StatusCodes.OK, outJson))
+                      case Failure(failure) =>
+                        val outJson = write(failure)
+                        userLog.error(outJson)
+                        complete((StatusCodes.InternalServerError, outJson))
                     }
                   }
               },
