@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.{delete, get, post}
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.util.Timeout
+import org.json4s.jackson.JsonMethods._
 
 import scala.concurrent.duration._
 

@@ -56,19 +56,22 @@ class RoomActor extends Actor with ActorLogging {
         case BookRoom(input) =>
             DbRoom.GetRoom(input.number) match {
                 case Right(room) =>
-                    // TODO: Add check for busy
-                    DbRoom.BookRoom(room.number, DbModels.Booking(
-                        start = input.start,
-                        stop = input.stop,
-                        userEmail = Jwt.email,
-                    )) match {
-                        case None => sender() ! Messages.updated
-                        case Some(error) =>
-                            error match {
-                                case DbError(msg) => sender() ! Errors.db(msg)
-                                case _ => sender() ! Errors.unknown
-                            }
-                    }
+                    // Intersecting ranges exists
+                    if (room.bookings.exists(booking => booking.start < input.stop && booking.stop > input.start))
+                        sender() ! Errors.roomBusy
+                    else
+                        DbRoom.BookRoom(room.number, DbModels.Booking(
+                            start = input.start,
+                            stop = input.stop,
+                            userEmail = Jwt.email,
+                        )) match {
+                            case None => sender() ! Messages.updated
+                            case Some(error) =>
+                                error match {
+                                    case DbError(msg) => sender() ! Errors.db(msg)
+                                    case _ => sender() ! Errors.unknown
+                                }
+                        }
                 case Left(error) =>
                     error match {
                         case NotFound => sender() ! Errors.roomNotFound

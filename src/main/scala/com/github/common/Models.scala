@@ -2,6 +2,8 @@ package com.github.common
 
 import akka.http.scaladsl.model.DateTime
 
+// JWT MOCK
+
 trait JwtTrait {
     val email: String
     val name: String
@@ -43,6 +45,7 @@ case object OutModels {
     
     // Messages
     final case class Message(code: Int, message: String)
+    final case class Error(code: Int, message: String)
     
     // User
     final case class GetUser(email: String, name: String, isAdmin: Boolean)
@@ -76,7 +79,7 @@ case object PasswordInvalid extends ErrorType
 
 final case class DbError(msg: String) extends ErrorType
 
-// Api Messages
+// API MESSAGES
 
 object Messages {
     import OutModels.Message
@@ -88,19 +91,19 @@ object Messages {
 }
 
 object Errors {
-    import OutModels.Message
+    import OutModels.Error
     
-    val userNotFound: Message = Message(-1, "user not found")
-    val userExists: Message = Message(-2, "user already exists")
-    val roomNotFound: Message = Message(-3, "room not found")
-    val roomExists: Message = Message(-4, "room already exists")
-    val roomBusy: Message = Message(-5, "at selected time room already busy")
-    val bookingNotFound: Message = Message(-6, "booking not found")
-    val noPermissions: Message = Message(-7, "you have not got permissions")
+    val userNotFound: Error = Error(-1, "user not found")
+    val userExists: Error = Error(-2, "user already exists")
+    val roomNotFound: Error = Error(-3, "room not found")
+    val roomExists: Error = Error(-4, "room already exists")
+    val roomBusy: Error = Error(-5, "at selected time room already busy")
+    val bookingNotFound: Error = Error(-6, "booking not found")
+    val noPermissions: Error = Error(-7, "you have not got permissions")
     
-    val invalidEmail: Message = Message(-10, "invalid password")
-    val invalidPassword: Message = Message(-11, "invalid password")
+    val invalidEmail: Error = Error(-10, "invalid password")
+    val invalidPassword: Error = Error(-11, "invalid password")
     
-    val unknown: Message = Message(-98, "unknown error")
-    def db(msg: String): Message = Message(-99, s"db error: $msg")
+    val unknown: Error = Error(-98, "unknown error")
+    def db(msg: String): Error = Error(-99, s"db error: $msg")
 }
