@@ -45,8 +45,8 @@ case object DbModels {
     final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
     
     // Real data
-    final case class User(email: String, passHash: String, name: String, isAdmin: Boolean)
-    final case class Room(number: String, bookings: List[DbModels.Booking])
+    final case class User(email: String, passHash: Option[String], name: Option[String], isAdmin: Option[Boolean])
+    final case class Room(number: String, bookings: Option[List[DbModels.Booking]])
 }
 
 // ERRORS
