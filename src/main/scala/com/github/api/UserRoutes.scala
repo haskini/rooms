@@ -3,6 +3,7 @@ package com.github.api
 import akka.actor.{ActorRef, ActorSystem}
 import akka.event.Logging
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.{delete, get, post}
@@ -24,7 +25,27 @@ trait UserRoutes {
   // we leave these abstract, since they will be provided by the App
   implicit def system: ActorSystem
   
+  def checkAuth(): Boolean = {
+    //optionalCookie(jwtCookieName) {
+    //  case Some(cookie) =>
+    //    // TODO: Check JWT
+    //    //if (checkJwt(cookie.value)) {
+    //    if (true)
+    //      true
+    //    else {
+    //      deleteCookie(jwtCookieName) {
+    //        false
+    //      }
+    //    }
+    //  case None =>
+    //    false
+    //}
+    true
+  }
+  
+  
   lazy val userLog = Logging(system, classOf[UserRoutes])
+  lazy val jwtCookieName: String = "jwt"
   // TODO: Handle entity errors
   lazy val userRoutes: Route =
     concat(
@@ -34,7 +55,7 @@ trait UserRoutes {
             concat(
               get {
                 userLog.info("[GET] /user")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   userLog.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -71,7 +92,7 @@ trait UserRoutes {
               },
               post {
                 userLog.info("[POST] /user")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   userLog.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -90,10 +111,13 @@ trait UserRoutes {
                                 userLog.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
-                                // TODO: Set cookie
-                                val outJson = write(msg)
-                                userLog.debug(outJson)
-                                complete((StatusCodes.Created, outJson))
+                                // TODO: Generate JWT
+                                val jwtToken = "here_will_be_jwt"
+                                setCookie(HttpCookie(jwtCookieName, value = jwtToken)) {
+                                  val outJson = write(msg)
+                                  userLog.debug(outJson)
+                                  complete((StatusCodes.Created, outJson))
+                                }
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
@@ -106,7 +130,7 @@ trait UserRoutes {
               },
               put {
                 userLog.info("[PUT] /user")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   userLog.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -125,10 +149,13 @@ trait UserRoutes {
                                 userLog.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
-                                // TODO: Update cookie
-                                val outJson = write(msg)
-                                userLog.debug(outJson)
-                                complete((StatusCodes.Created, outJson))
+                                // TODO: Generate JWT
+                                val jwtToken = "here_will_be_jwt"
+                                setCookie(HttpCookie(jwtCookieName, value = jwtToken)) {
+                                  val outJson = write(msg)
+                                  userLog.debug(outJson)
+                                  complete((StatusCodes.Created, outJson))
+                                }
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
@@ -141,7 +168,7 @@ trait UserRoutes {
               },
               delete {
                 userLog.info("[DELETE] /user")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   userLog.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -160,10 +187,11 @@ trait UserRoutes {
                                 userLog.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
-                                // TODO: Reset cookie
-                                val outJson = write(msg)
-                                userLog.debug(outJson)
-                                complete((StatusCodes.OK, outJson))
+                                deleteCookie(jwtCookieName) {
+                                  val outJson = write(msg)
+                                  userLog.debug(outJson)
+                                  complete((StatusCodes.OK, outJson))
+                                }
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
@@ -184,7 +212,7 @@ trait UserRoutes {
             concat(
               get {
                 userLog.info("[GET] /users")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   userLog.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
@@ -215,8 +243,7 @@ trait UserRoutes {
             concat(
               get {
                 userLog.info("[GET] /session")
-                // TODO: This method checks whether user is signed in or signed out
-                if (true) {
+                if (checkAuth()) {
                   val outJson = write(Messages.signedIn)
                   userLog.debug(outJson)
                   complete((StatusCodes.OK, outJson))
@@ -229,7 +256,7 @@ trait UserRoutes {
               },
               post {
                 userLog.info("[POST] /session")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedIn)
                   userLog.debug(outJson)
                   complete((StatusCodes.BadRequest, outJson))
@@ -248,10 +275,13 @@ trait UserRoutes {
                                 userLog.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
-                                // TODO: Set cookie
-                                val outJson = write(msg)
-                                userLog.debug(outJson)
-                                complete((StatusCodes.OK, outJson))
+                                // TODO: Generate JWT
+                                val jwtToken = "here_will_be_jwt"
+                                setCookie(HttpCookie(jwtCookieName, value = jwtToken)) {
+                                  val outJson = write(msg)
+                                  userLog.debug(outJson)
+                                  complete((StatusCodes.OK, outJson))
+                                }
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
@@ -264,16 +294,17 @@ trait UserRoutes {
               },
               delete {
                 userLog.info("[DELETE] /session")
-                if (false) {
+                if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
                   userLog.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else {
-                  // TODO: Reset cookie
-                  val outJson = write(Messages.signedOut)
-                  userLog.debug(outJson)
-                  complete((StatusCodes.OK, outJson))
+                  deleteCookie(jwtCookieName) {
+                    val outJson = write(Messages.signedOut)
+                    userLog.debug(outJson)
+                    complete((StatusCodes.OK, outJson))
+                  }
                 }
               },
             )
