@@ -44,8 +44,9 @@ case object OutModels {
     final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
     
     // Messages
-    final case class Message(code: Int, message: String)
-    final case class Error(code: Int, message: String)
+    sealed trait MessageWithCode
+    final case class Message(code: Int, message: String) extends MessageWithCode
+    final case class Error(code: Int, message: String) extends MessageWithCode
     
     // User
     final case class GetUser(email: String, name: String, isAdmin: Boolean)
@@ -88,6 +89,10 @@ object Messages {
     val created: Message = Message(1, "created")
     val updated: Message = Message(2, "updated")
     val deleted: Message = Message(3, "deleted")
+    
+    val signedIn: Error = Errors(10, "signed in")
+    val signedOut: Error = Errors(11, "signed out")
+    
 }
 
 object Errors {
@@ -101,8 +106,12 @@ object Errors {
     val bookingNotFound: Error = Error(-6, "booking not found")
     val noPermissions: Error = Error(-7, "you have not got permissions")
     
-    val invalidEmail: Error = Error(-10, "invalid password")
-    val invalidPassword: Error = Error(-11, "invalid password")
+    val invalidJson: Error = Error(-10, "invalid json")
+    val invalidEmail: Error = Error(-11, "invalid password")
+    val invalidPassword: Error = Error(-12, "invalid password")
+    
+    val signedIn: Error = Errors(-20, "already signed out")
+    val signedOut: Error = Errors(-21, "signed out")
     
     val unknown: Error = Error(-98, "unknown error")
     def db(msg: String): Error = Error(-99, s"db error: $msg")
