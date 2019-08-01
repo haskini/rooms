@@ -3,6 +3,7 @@ package com.github.api
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.util.Timeout
+import com.github.common.JwtModel
 import org.json4s.DefaultFormats
 
 import scala.concurrent.duration._
@@ -18,6 +19,12 @@ trait Routing {
   lazy val log = Logging(system, classOf[Routing])
   // Cookie name for JWT
   lazy val jwtCookieName: String = "jwt"
+  
+  object jwt extends JwtModel {
+    val email = "test@mail.ru"
+    val name = "Test"
+    val isAdmin = true
+  }
   
   def checkAuth(): Boolean = {
     //optionalCookie(jwtCookieName) {

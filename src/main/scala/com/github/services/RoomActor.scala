@@ -13,8 +13,8 @@ object RoomActor {
   
   final case class GetRooms(data: InModels.GetRooms)
   
-  final case class BookRoom(data: InModels.BookRoom)
-  final case class FreeRoom(data: InModels.FreeRoom)
+  final case class BookRoom(jwt: JwtModel, data: InModels.BookRoom)
+  final case class FreeRoom(jwt: JwtModel, data: InModels.FreeRoom)
 }
 
 class RoomActor extends Actor with ActorLogging {
@@ -53,7 +53,7 @@ class RoomActor extends Actor with ActorLogging {
             case _ => sender() ! Errors.unknown
           }
       }
-    case BookRoom(input) =>
+    case BookRoom(jwt, input) =>
       DbRoom.GetRoom(input.number) match {
         case Right(room) =>
           // Intersecting ranges exists
@@ -63,7 +63,7 @@ class RoomActor extends Actor with ActorLogging {
             DbRoom.BookRoom(room.number, DbModels.Booking(
               start = input.start,
               stop = input.stop,
-              userEmail = Jwt.email,
+              userEmail = jwt.email,
             )) match {
               case None => sender() ! Messages.updated
               case Some(error) =>
@@ -79,12 +79,12 @@ class RoomActor extends Actor with ActorLogging {
             case _ => sender() ! Errors.unknown
           }
       }
-    case FreeRoom(input) =>
+    case FreeRoom(jwt, input) =>
       DbRoom.GetRoom(input.number) match {
         case Right(room) =>
           if (room.bookings.exists(_.start == input.start))
             room.bookings.filter(_.start == input.start).foreach(booking =>
-              if (Jwt.isAdmin || booking.userEmail == Jwt.email)
+              if (jwt.isAdmin || booking.userEmail == jwt.email)
                 DbRoom.FreeRoom(room.number, booking.start) match {
                   case None => sender() ! Messages.updated
                   case Some(error) =>

@@ -10,9 +10,9 @@ object UserActor {
   final case class GetUser(data: InModels.GetUser)
   final case class CheckPassword(data: InModels.CheckPassword)
   final case class CreateUser(data: InModels.CreateUser)
-  final case class UpdateUser(data: InModels.UpdateUser)
-  final case class UpdatePassword(data: InModels.UpdatePassword)
-  final case class DeleteUser(data: InModels.DeleteUser)
+  final case class UpdateUser(jwt: JwtModel, data: InModels.UpdateUser)
+  final case class UpdatePassword(jwt: JwtModel, data: InModels.UpdatePassword)
+  final case class DeleteUser(jwt: JwtModel, data: InModels.DeleteUser)
   
   final case class GetUsers(data: InModels.GetUsers)
 }
@@ -69,8 +69,8 @@ class UserActor extends Actor with ActorLogging {
             case _ => sender() ! Errors.unknown
           }
       }
-    case UpdateUser(input) =>
-      DbUser.GetUser(Jwt.email) match {
+    case UpdateUser(jwt, input) =>
+      DbUser.GetUser(jwt.email) match {
         case Right(user) =>
           DbUser.UpdateUser(user.email, DbModels.User(
             email = input.email,
@@ -92,8 +92,8 @@ class UserActor extends Actor with ActorLogging {
             case _ => sender() ! Errors.unknown
           }
       }
-    case UpdatePassword(input) =>
-      DbUser.GetUser(Jwt.email) match {
+    case UpdatePassword(jwt, input) =>
+      DbUser.GetUser(jwt.email) match {
         case Right(user) =>
           if (Helpers.HashPassword(input.oldPassword) == user.passHash)
             DbUser.UpdateUser(user.email, DbModels.User(
@@ -118,8 +118,8 @@ class UserActor extends Actor with ActorLogging {
             case _ => sender() ! Errors.unknown
           }
       }
-    case DeleteUser(input) =>
-      DbUser.GetUser(Jwt.email) match {
+    case DeleteUser(jwt, input) =>
+      DbUser.GetUser(jwt.email) match {
         case Right(user) =>
           if (Helpers.HashPassword(input.password) == user.passHash)
             DbUser.DeleteUser(user.email) match {

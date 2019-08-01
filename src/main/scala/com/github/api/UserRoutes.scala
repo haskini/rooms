@@ -42,7 +42,7 @@ trait UserRoutes {
                     var email = ""
                     input match {
                       case Some(param) => email = param
-                      case None => email = Jwt.email
+                      case None => email = jwt.email
                     }
                     val answer = userActor ? GetUser(InModels.GetUser(email))
                     val userFuture: Future[OutModels.GetUser] = answer.mapTo[OutModels.GetUser]
@@ -117,7 +117,7 @@ trait UserRoutes {
                     parse(data).extractOpt[InModels.UpdateUser] match {
                       case Some(input) =>
                         val result: Future[OutModels.MessageWithCode] =
-                          (userActor ? UpdateUser(input)).mapTo[OutModels.MessageWithCode]
+                          (userActor ? UpdateUser(jwt, input)).mapTo[OutModels.MessageWithCode]
                         onComplete(result) {
                           case Success(msg) =>
                             msg match {
@@ -155,7 +155,7 @@ trait UserRoutes {
                     parse(data).extractOpt[InModels.DeleteUser] match {
                       case Some(input) =>
                         val result: Future[OutModels.MessageWithCode] =
-                          (userActor ? DeleteUser(input)).mapTo[OutModels.MessageWithCode]
+                          (userActor ? DeleteUser(jwt, input)).mapTo[OutModels.MessageWithCode]
                         onComplete(result) {
                           case Success(msg) =>
                             msg match {

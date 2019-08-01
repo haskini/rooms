@@ -150,7 +150,7 @@ trait RoomRoutes {
                     parse(data).extractOpt[InModels.BookRoom] match {
                       case Some(input) =>
                         val result: Future[OutModels.MessageWithCode] =
-                          (roomActor ? BookRoom(input)).mapTo[OutModels.MessageWithCode]
+                          (roomActor ? BookRoom(jwt, input)).mapTo[OutModels.MessageWithCode]
                         onComplete(result) {
                           case Success(msg) =>
                             msg match {
@@ -184,7 +184,7 @@ trait RoomRoutes {
                     parse(data).extractOpt[InModels.FreeRoom] match {
                       case Some(input) =>
                         val result: Future[OutModels.MessageWithCode] =
-                          (roomActor ? FreeRoom(input)).mapTo[OutModels.MessageWithCode]
+                          (roomActor ? FreeRoom(jwt, input)).mapTo[OutModels.MessageWithCode]
                         onComplete(result) {
                           case Success(msg) =>
                             msg match {

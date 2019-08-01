@@ -4,16 +4,10 @@ import akka.http.scaladsl.model.DateTime
 
 // JWT MOCK
 
-trait JwtTrait {
+trait JwtModel {
     val email: String
     val name: String
     val isAdmin: Boolean
-}
-
-object Jwt extends JwtTrait {
-    val email = "test@mail.ru"
-    val name = "Test"
-    val isAdmin = true
 }
 
 // IN MODELS
