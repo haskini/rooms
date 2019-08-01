@@ -21,31 +21,8 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 trait UserRoutes {
+  this: Routing =>
   
-  // we leave these abstract, since they will be provided by the App
-  implicit def system: ActorSystem
-  
-  def checkAuth(): Boolean = {
-    //optionalCookie(jwtCookieName) {
-    //  case Some(cookie) =>
-    //    // TODO: Check JWT
-    //    //if (checkJwt(cookie.value)) {
-    //    if (true)
-    //      true
-    //    else {
-    //      deleteCookie(jwtCookieName) {
-    //        false
-    //      }
-    //    }
-    //  case None =>
-    //    false
-    //}
-    true
-  }
-  
-  
-  lazy val userLog = Logging(system, classOf[UserRoutes])
-  lazy val jwtCookieName: String = "jwt"
   // TODO: Handle entity errors
   lazy val userRoutes: Route =
     concat(
@@ -54,10 +31,10 @@ trait UserRoutes {
           pathEnd {
             concat(
               get {
-                userLog.info("[GET] /user")
+                log.info("[GET] /user")
                 if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -72,7 +49,7 @@ trait UserRoutes {
                     onComplete(userFuture) {
                       case Success(user) =>
                         val outJson = write(user)
-                        userLog.debug(outJson)
+                        log.debug(outJson)
                         complete((StatusCodes.OK, outJson))
                       case Failure(_) =>
                         val messageFuture: Future[OutModels.MessageWithCode] =
@@ -80,21 +57,21 @@ trait UserRoutes {
                         onComplete(messageFuture) {
                           case Success(user) =>
                             val outJson = write(user)
-                            userLog.debug(outJson)
+                            log.debug(outJson)
                             complete((StatusCodes.OK, outJson))
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            userLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                     }
                   }
               },
               post {
-                userLog.info("[POST] /user")
+                log.info("[POST] /user")
                 if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -108,20 +85,20 @@ trait UserRoutes {
                             msg match {
                               case OutModels.Error(_, _) =>
                                 val outJson = write(msg)
-                                userLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
                                 // TODO: Generate JWT
                                 val jwtToken = "here_will_be_jwt"
                                 setCookie(HttpCookie(jwtCookieName, value = jwtToken)) {
                                   val outJson = write(msg)
-                                  userLog.debug(outJson)
+                                  log.debug(outJson)
                                   complete((StatusCodes.Created, outJson))
                                 }
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            userLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
@@ -129,10 +106,10 @@ trait UserRoutes {
                   }
               },
               put {
-                userLog.info("[PUT] /user")
+                log.info("[PUT] /user")
                 if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -146,20 +123,20 @@ trait UserRoutes {
                             msg match {
                               case OutModels.Error(_, _) =>
                                 val outJson = write(msg)
-                                userLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
                                 // TODO: Generate JWT
                                 val jwtToken = "here_will_be_jwt"
                                 setCookie(HttpCookie(jwtCookieName, value = jwtToken)) {
                                   val outJson = write(msg)
-                                  userLog.debug(outJson)
+                                  log.debug(outJson)
                                   complete((StatusCodes.Created, outJson))
                                 }
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            userLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
@@ -167,10 +144,10 @@ trait UserRoutes {
                   }
               },
               delete {
-                userLog.info("[DELETE] /user")
+                log.info("[DELETE] /user")
                 if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -184,18 +161,18 @@ trait UserRoutes {
                             msg match {
                               case OutModels.Error(_, _) =>
                                 val outJson = write(msg)
-                                userLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
                                 deleteCookie(jwtCookieName) {
                                   val outJson = write(msg)
-                                  userLog.debug(outJson)
+                                  log.debug(outJson)
                                   complete((StatusCodes.OK, outJson))
                                 }
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            userLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
@@ -211,10 +188,10 @@ trait UserRoutes {
           pathEnd {
             concat(
               get {
-                userLog.info("[GET] /users")
+                log.info("[GET] /users")
                 if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -224,11 +201,11 @@ trait UserRoutes {
                     onComplete(result) {
                       case Success(users) =>
                         val outJson = write(users)
-                        userLog.debug(outJson)
+                        log.debug(outJson)
                         complete((StatusCodes.OK, outJson))
                       case Failure(failure) =>
                         val outJson = write(failure)
-                        userLog.error(outJson)
+                        log.error(outJson)
                         complete((StatusCodes.InternalServerError, outJson))
                     }
                   }
@@ -242,23 +219,23 @@ trait UserRoutes {
           pathEnd {
             concat(
               get {
-                userLog.info("[GET] /session")
+                log.info("[GET] /session")
                 if (checkAuth()) {
                   val outJson = write(Messages.signedIn)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.OK, outJson))
                 }
                 else {
                   val outJson = write(Messages.signedOut)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
               },
               post {
-                userLog.info("[POST] /session")
+                log.info("[POST] /session")
                 if (!checkAuth()) {
                   val outJson = write(Errors.signedIn)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.BadRequest, outJson))
                 }
                 else
@@ -272,20 +249,20 @@ trait UserRoutes {
                             msg match {
                               case OutModels.Error(code, _) =>
                                 val outJson = write(msg)
-                                userLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
                                 // TODO: Generate JWT
                                 val jwtToken = "here_will_be_jwt"
                                 setCookie(HttpCookie(jwtCookieName, value = jwtToken)) {
                                   val outJson = write(msg)
-                                  userLog.debug(outJson)
+                                  log.debug(outJson)
                                   complete((StatusCodes.OK, outJson))
                                 }
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            userLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
@@ -293,16 +270,16 @@ trait UserRoutes {
                   }
               },
               delete {
-                userLog.info("[DELETE] /session")
+                log.info("[DELETE] /session")
                 if (!checkAuth()) {
                   val outJson = write(Errors.signedOut)
-                  userLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else {
                   deleteCookie(jwtCookieName) {
                     val outJson = write(Messages.signedOut)
-                    userLog.debug(outJson)
+                    log.debug(outJson)
                     complete((StatusCodes.OK, outJson))
                   }
                 }
@@ -313,9 +290,6 @@ trait UserRoutes {
       },
     )
   
-  implicit val userFormats: DefaultFormats.type = DefaultFormats
-  // Required by the `ask` (?) method below
-  implicit lazy val userTimeout: Timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration
   // other dependencies that UserRoutes use
   def userActor: ActorRef
 }

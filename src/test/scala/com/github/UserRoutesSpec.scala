@@ -3,13 +3,13 @@ package com.github
 import akka.actor.ActorRef
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.github.api.UserRoutes
+import com.github.api._
 import com.github.services.UserActor
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
 
 class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest
-    with UserRoutes {
+    with UserRoutes with Routing {
     
     lazy val routes = userRoutes
     // Here we need to implement all the abstract members of UserRoutes.

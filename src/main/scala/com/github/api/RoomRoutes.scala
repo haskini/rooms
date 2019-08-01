@@ -20,11 +20,8 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 trait RoomRoutes {
+  this: Routing =>
   
-  // we leave these abstract, since they will be provided by the App
-  implicit def system: ActorSystem
-  
-  lazy val roomLog = Logging(system, classOf[RoomRoutes])
   lazy val roomRoutes: Route =
     concat(
       pathPrefix("room") {
@@ -32,10 +29,10 @@ trait RoomRoutes {
           pathEnd {
             concat(
               get {
-                roomLog.info("[GET] /room")
+                log.info("[GET] /room")
                 if (false) {
                   val outJson = write(Errors.signedOut)
-                  roomLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -46,7 +43,7 @@ trait RoomRoutes {
                       onComplete(roomFuture) {
                         case Success(room) =>
                           val outJson = write(room)
-                          roomLog.debug(outJson)
+                          log.debug(outJson)
                           complete((StatusCodes.OK, outJson))
                         case Failure(_) =>
                           val messageFuture: Future[OutModels.MessageWithCode] =
@@ -54,11 +51,11 @@ trait RoomRoutes {
                           onComplete(messageFuture) {
                             case Success(room) =>
                               val outJson = write(room)
-                              roomLog.debug(outJson)
+                              log.debug(outJson)
                               complete((StatusCodes.OK, outJson))
                             case Failure(failure) =>
                               val outJson = write(failure)
-                              roomLog.error(outJson)
+                              log.error(outJson)
                               complete((StatusCodes.InternalServerError, outJson))
                           }
                       }
@@ -66,10 +63,10 @@ trait RoomRoutes {
                   }
               },
               post {
-                roomLog.info("[POST] /room")
+                log.info("[POST] /room")
                 if (false) {
                   val outJson = write(Errors.signedOut)
-                  roomLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -83,16 +80,16 @@ trait RoomRoutes {
                             msg match {
                               case OutModels.Error(_, _) =>
                                 val outJson = write(msg)
-                                roomLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
                                 val outJson = write(msg)
-                                roomLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.Created, outJson))
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            roomLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
@@ -100,10 +97,10 @@ trait RoomRoutes {
                   }
               },
               delete {
-                roomLog.info("[DELETE] /room")
+                log.info("[DELETE] /room")
                 if (false) {
                   val outJson = write(Errors.signedOut)
-                  roomLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -117,16 +114,16 @@ trait RoomRoutes {
                             msg match {
                               case OutModels.Error(_, _) =>
                                 val outJson = write(msg)
-                                roomLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
                                 val outJson = write(msg)
-                                roomLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.OK, outJson))
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            roomLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
@@ -142,10 +139,10 @@ trait RoomRoutes {
           pathEnd {
             concat(
               post {
-                roomLog.info("[POST] /booking")
+                log.info("[POST] /booking")
                 if (false) {
                   val outJson = write(Errors.signedOut)
-                  roomLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -159,16 +156,16 @@ trait RoomRoutes {
                             msg match {
                               case OutModels.Error(_, _) =>
                                 val outJson = write(msg)
-                                roomLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
                                 val outJson = write(msg)
-                                roomLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.OK, outJson))
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            roomLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
@@ -176,10 +173,10 @@ trait RoomRoutes {
                   }
               },
               delete {
-                roomLog.info("[DELETE] /booking")
+                log.info("[DELETE] /booking")
                 if (false) {
                   val outJson = write(Errors.signedOut)
-                  roomLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -193,16 +190,16 @@ trait RoomRoutes {
                             msg match {
                               case OutModels.Error(_, _) =>
                                 val outJson = write(msg)
-                                roomLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.BadRequest, outJson))
                               case OutModels.Message(_, _) =>
                                 val outJson = write(msg)
-                                roomLog.debug(outJson)
+                                log.debug(outJson)
                                 complete((StatusCodes.OK, outJson))
                             }
                           case Failure(failure) =>
                             val outJson = write(failure)
-                            roomLog.error(outJson)
+                            log.error(outJson)
                             complete((StatusCodes.InternalServerError, outJson))
                         }
                       case None => complete((StatusCodes.BadRequest, "Incorrect json!"))
@@ -218,10 +215,10 @@ trait RoomRoutes {
           pathEnd {
             concat(
               get {
-                roomLog.info("[GET] /rooms")
+                log.info("[GET] /rooms")
                 if (false) {
                   val outJson = write(Errors.signedOut)
-                  roomLog.debug(outJson)
+                  log.debug(outJson)
                   complete((StatusCodes.Unauthorized, outJson))
                 }
                 else
@@ -231,11 +228,11 @@ trait RoomRoutes {
                     onComplete(result) {
                       case Success(rooms) =>
                         val outJson = write(rooms)
-                        roomLog.debug(outJson)
+                        log.debug(outJson)
                         complete((StatusCodes.OK, outJson))
                       case Failure(failure) =>
                         val outJson = write(failure)
-                        roomLog.error(outJson)
+                        log.error(outJson)
                         complete((StatusCodes.InternalServerError, outJson))
                     }
                   }
@@ -246,9 +243,6 @@ trait RoomRoutes {
       },
     )
   
-  implicit val roomFormats: DefaultFormats.type = DefaultFormats
-  // Required by the `ask` (?) method below
-  implicit lazy val roomTimeout: Timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration
   // other dependencies that RoomRoutes use
   def roomActor: ActorRef
 }

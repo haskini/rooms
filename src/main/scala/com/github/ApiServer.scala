@@ -12,7 +12,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object ApiServer extends App with UserRoutes with RoomRoutes {
+object ApiServer extends App with UserRoutes with RoomRoutes with Routing {
   
   // set up ActorSystem and other dependencies here
   implicit val system: ActorSystem = ActorSystem("roomsApi")
