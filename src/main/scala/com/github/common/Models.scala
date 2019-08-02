@@ -54,8 +54,8 @@ case object DbModels {
     final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
     
     // Real data
-    final case class User(email: String, passHash: Option[String], name: Option[String], isAdmin: Option[Boolean])
-    final case class Room(number: String, bookings: Option[List[DbModels.Booking]])
+    final case class User(email: String, passHash: String, name: String, isAdmin: Boolean)
+    final case class Room(number: String, bookings: List[DbModels.Booking])
 }
 
 // ERRORS
@@ -65,6 +65,7 @@ sealed trait ErrorType
 case object NotFound extends ErrorType
 case object AlreadyExist extends ErrorType
 
+case object JwtInvalid extends ErrorType
 case object EmailInvalid extends ErrorType
 case object PasswordInvalid extends ErrorType
 
@@ -102,9 +103,9 @@ object Errors {
     val invalidPassword: Error = Error(-13, "invalid password")
     val invalidNumber: Error = Error(-14, "invalid number")
     
-    val signedIn: Error = Error(-20, "already signed out")
+    val signedIn: Error = Error(-20, "already signed in")
     val signedOut: Error = Error(-21, "signed out")
     
-    val unknown: Error = Error(-98, "unknown error")
+    def unknown(msg: String = ""): Error = Error(-98, s"unknown error: $msg")
     def db(msg: String): Error = Error(-99, s"db error: $msg")
 }

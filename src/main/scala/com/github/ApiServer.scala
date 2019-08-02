@@ -13,7 +13,6 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object ApiServer extends App with UserRoutes with RoomRoutes with Routing {
-  
   // set up ActorSystem and other dependencies here
   implicit val system: ActorSystem = ActorSystem("roomsApi")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -23,10 +22,7 @@ object ApiServer extends App with UserRoutes with RoomRoutes with Routing {
   val roomActor: ActorRef = system.actorOf(RoomActor.props, "roomActor")
   
   // from the UserRoutes trait
-  lazy val routes: Route = concat(
-    userRoutes,
-    roomRoutes,
-  )
+  lazy val routes: Route = userRoutes ~ roomRoutes
   val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", 4567)
   
   serverBinding.onComplete {

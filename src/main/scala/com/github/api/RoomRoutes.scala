@@ -20,160 +20,172 @@ trait RoomRoutes {
   lazy val roomRoutes: Route =
     pathPrefix("room") {
       pathEndOrSingleSlash {
-        get {
+        (get & checkAuth) { maybeJwt =>
           log.info("[GET] /room")
-          if (!checkAuth()) {
-            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-          }
-          else
-            parameter('number.?) {
-              case Some(number) =>
-                val answer = roomActor ? GetRoom(InModels.GetRoom(number))
-                val roomFuture: Future[OutModels.GetRoom] = answer.mapTo[OutModels.GetRoom]
-                onComplete(roomFuture) {
-                  case Success(room) =>
-                    completeWithLog(room, StatusCodes.OK)
-                  case Failure(_) =>
-                    val messageFuture: Future[OutModels.MessageWithCode] =
-                      answer.mapTo[OutModels.MessageWithCode]
-                    onComplete(messageFuture) {
-                      case Success(room) =>
-                        completeWithLog(room, StatusCodes.OK)
-                      case Failure(failure) =>
-                        completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
-                    }
+          maybeJwt match {
+            case Left(error) => error match {
+              case Some(JwtInvalid) =>
+                deleteCookie(jwtCookieName) {
+                  completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
                 }
-              case None =>
-                completeWithLog(Errors.invalidNumber, StatusCodes.BadRequest)
+              case _ =>
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
             }
-        } ~ post {
+            case Right(_) =>
+              parameter('number.?) {
+                case Some(number) =>
+                  val answer = roomActor ? GetRoom(InModels.GetRoom(number))
+                  val roomFuture: Future[OutModels.GetRoom] = answer.mapTo[OutModels.GetRoom]
+                  onComplete(roomFuture) {
+                    case Success(room) =>
+                      completeWithLog(room, StatusCodes.OK)
+                    case Failure(_) =>
+                      val messageFuture: Future[OutModels.MessageWithCode] =
+                        answer.mapTo[OutModels.MessageWithCode]
+                      onComplete(messageFuture) {
+                        case Success(room) =>
+                          completeWithLog(room, StatusCodes.OK)
+                        case Failure(failure) =>
+                          completeWithLog(failure.toString, StatusCodes.InternalServerError, isError = true)
+                      }
+                  }
+                case None =>
+                  completeWithLog(Errors.invalidNumber, StatusCodes.BadRequest)
+              }
+          }
+        } ~ (post & checkAuth) { maybeJwt =>
           log.info("[POST] /room")
-          if (!checkAuth()) {
-            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-          }
-          else
-            entity(as[String]) { data =>
-              parse(data).extractOpt[InModels.CreateRoom] match {
-                case Some(input) =>
-                  val result: Future[OutModels.MessageWithCode] =
-                    (roomActor ? CreateRoom(input)).mapTo[OutModels.MessageWithCode]
-                  onComplete(result) {
-                    case Success(msg) =>
-                      msg match {
-                        case OutModels.Error(_, _) =>
-                          completeWithLog(msg, StatusCodes.BadRequest)
-                        case OutModels.Message(_, _) =>
-                          completeWithLog(msg, StatusCodes.Created)
-                      }
-                    case Failure(failure) =>
-                      completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
-                  }
-                case None =>
-                  completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+          maybeJwt match {
+            case Left(error) =>
+              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+            case Right(_) =>
+              entity(as[String]) { data =>
+                parse(data).extractOpt[InModels.CreateRoom] match {
+                  case Some(input) =>
+                    val result: Future[OutModels.MessageWithCode] =
+                      (roomActor ? CreateRoom(input)).mapTo[OutModels.MessageWithCode]
+                    onComplete(result) {
+                      case Success(msg) =>
+                        msg match {
+                          case OutModels.Error(_, _) =>
+                            completeWithLog(msg, StatusCodes.BadRequest)
+                          case OutModels.Message(_, _) =>
+                            completeWithLog(msg, StatusCodes.Created)
+                        }
+                      case Failure(failure) =>
+                        completeWithLog(failure.toString, StatusCodes.InternalServerError, isError = true)
+                    }
+                  case None =>
+                    completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+                }
               }
-            }
-        } ~ delete {
+          }
+        } ~ (delete & checkAuth) { maybeJwt =>
           log.info("[DELETE] /room")
-          if (!checkAuth()) {
-            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-          }
-          else
-            entity(as[String]) { data =>
-              parse(data).extractOpt[InModels.DeleteRoom] match {
-                case Some(input) =>
-                  val result: Future[OutModels.MessageWithCode] =
-                    (roomActor ? DeleteRoom(input)).mapTo[OutModels.MessageWithCode]
-                  onComplete(result) {
-                    case Success(msg) =>
-                      msg match {
-                        case OutModels.Error(_, _) =>
-                          completeWithLog(msg, StatusCodes.BadRequest)
-                        case OutModels.Message(_, _) =>
-                          completeWithLog(msg, StatusCodes.OK)
-                      }
-                    case Failure(failure) =>
-                      completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
-                  }
-                case None =>
-                  completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+          maybeJwt match {
+            case Left(error) =>
+              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+            case Right(_) =>
+              entity(as[String]) { data =>
+                parse(data).extractOpt[InModels.DeleteRoom] match {
+                  case Some(input) =>
+                    val result: Future[OutModels.MessageWithCode] =
+                      (roomActor ? DeleteRoom(input)).mapTo[OutModels.MessageWithCode]
+                    onComplete(result) {
+                      case Success(msg) =>
+                        msg match {
+                          case OutModels.Error(_, _) =>
+                            completeWithLog(msg, StatusCodes.BadRequest)
+                          case OutModels.Message(_, _) =>
+                            completeWithLog(msg, StatusCodes.OK)
+                        }
+                      case Failure(failure) =>
+                        completeWithLog(failure.toString, StatusCodes.InternalServerError, isError = true)
+                    }
+                  case None =>
+                    completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+                }
               }
-            }
+          }
         }
       }
     } ~ pathPrefix("booking") {
       pathEndOrSingleSlash {
-        post {
+        (post & checkAuth) { maybeJwt =>
           log.info("[POST] /booking")
-          if (!checkAuth()) {
-            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-          }
-          else
-            entity(as[String]) { data =>
-              parse(data).extractOpt[InModels.BookRoom] match {
-                case Some(input) =>
-                  val result: Future[OutModels.MessageWithCode] =
-                    (roomActor ? BookRoom(jwt, input)).mapTo[OutModels.MessageWithCode]
-                  onComplete(result) {
-                    case Success(msg) =>
-                      msg match {
-                        case OutModels.Error(_, _) =>
-                          completeWithLog(msg, StatusCodes.BadRequest)
-                        case OutModels.Message(_, _) =>
-                          completeWithLog(msg, StatusCodes.OK)
-                      }
-                    case Failure(failure) =>
-                      completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
-                  }
-                case None =>
-                  completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+          maybeJwt match {
+            case Left(error) =>
+              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+            case Right(jwt) =>
+              entity(as[String]) { data =>
+                parse(data).extractOpt[InModels.BookRoom] match {
+                  case Some(input) =>
+                    val result: Future[OutModels.MessageWithCode] =
+                      (roomActor ? BookRoom(jwt, input)).mapTo[OutModels.MessageWithCode]
+                    onComplete(result) {
+                      case Success(msg) =>
+                        msg match {
+                          case OutModels.Error(_, _) =>
+                            completeWithLog(msg, StatusCodes.BadRequest)
+                          case OutModels.Message(_, _) =>
+                            completeWithLog(msg, StatusCodes.OK)
+                        }
+                      case Failure(failure) =>
+                        completeWithLog(failure.toString, StatusCodes.InternalServerError, isError = true)
+                    }
+                  case None =>
+                    completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+                }
               }
-            }
-        } ~ delete {
+          }
+        } ~ (delete & checkAuth) { maybeJwt =>
           log.info("[DELETE] /booking")
-          if (!checkAuth()) {
-            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-          }
-          else
-            entity(as[String]) { data =>
-              parse(data).extractOpt[InModels.FreeRoom] match {
-                case Some(input) =>
-                  val result: Future[OutModels.MessageWithCode] =
-                    (roomActor ? FreeRoom(jwt, input)).mapTo[OutModels.MessageWithCode]
-                  onComplete(result) {
-                    case Success(msg) =>
-                      msg match {
-                        case OutModels.Error(_, _) =>
-                          completeWithLog(msg, StatusCodes.BadRequest)
-                        case OutModels.Message(_, _) =>
-                          completeWithLog(msg, StatusCodes.OK)
-                      }
-                    case Failure(failure) =>
-                      completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
-                  }
-                case None =>
-                  completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+          maybeJwt match {
+            case Left(error) =>
+              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+            case Right(jwt) =>
+              entity(as[String]) { data =>
+                parse(data).extractOpt[InModels.FreeRoom] match {
+                  case Some(input) =>
+                    val result: Future[OutModels.MessageWithCode] =
+                      (roomActor ? FreeRoom(jwt, input)).mapTo[OutModels.MessageWithCode]
+                    onComplete(result) {
+                      case Success(msg) =>
+                        msg match {
+                          case OutModels.Error(_, _) =>
+                            completeWithLog(msg, StatusCodes.BadRequest)
+                          case OutModels.Message(_, _) =>
+                            completeWithLog(msg, StatusCodes.OK)
+                        }
+                      case Failure(failure) =>
+                        completeWithLog(failure.toString, StatusCodes.InternalServerError, isError = true)
+                    }
+                  case None =>
+                    completeWithLog(Errors.invalidJson, StatusCodes.BadRequest)
+                }
               }
-            }
+          }
         }
       }
     } ~ pathPrefix("rooms") {
       pathEndOrSingleSlash {
-        get {
+        (get & checkAuth) { maybeJwt =>
           log.info("[GET] /rooms")
-          if (!checkAuth()) {
-            completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-          }
-          else
-            parameters('page.as[Int] ? 1, 'limit.as[Int] ? 10) { (page, limit) =>
-              val result: Future[OutModels.GetRooms] =
-                (roomActor ? GetRooms(InModels.GetRooms(page, limit))).mapTo[OutModels.GetRooms]
-              onComplete(result) {
-                case Success(rooms) =>
-                  completeWithLog(rooms, StatusCodes.OK)
-                case Failure(failure) =>
-                  completeWithLog(failure, StatusCodes.InternalServerError, isError = true)
+          maybeJwt match {
+            case Left(error) =>
+              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+            case Right(_) =>
+              parameters('page.as[Int] ? 1, 'limit.as[Int] ? 10) { (page, limit) =>
+                val result: Future[OutModels.GetRooms] =
+                  (roomActor ? GetRooms(InModels.GetRooms(page, limit))).mapTo[OutModels.GetRooms]
+                onComplete(result) {
+                  case Success(rooms) =>
+                    completeWithLog(rooms, StatusCodes.OK)
+                  case Failure(failure) =>
+                    completeWithLog(failure.toString, StatusCodes.InternalServerError, isError = true)
+                }
               }
-            }
+          }
         }
       }
     }
