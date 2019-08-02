@@ -113,7 +113,7 @@ class RoomActor extends Actor with ActorLogging {
             start = input.start,
             stop = input.stop,
             userEmail = jwt.email,
-          )) match {
+          )) map {
             case None => s ! Messages.updated
             case Some(error) => ErrorHandler(s, error)
           }
@@ -128,7 +128,7 @@ class RoomActor extends Actor with ActorLogging {
         if (room.bookings.exists(_.start == input.start))
           room.bookings.filter(_.start == input.start).foreach(booking =>
             if (jwt.isAdmin || booking.userEmail == jwt.email)
-              DbRoom.FreeRoom(room.number, booking.start) match {
+              DbRoom.FreeRoom(room.number, booking.start) map {
                 case None => s ! Messages.updated
                 case Some(error) => ErrorHandler(s, error)
               }

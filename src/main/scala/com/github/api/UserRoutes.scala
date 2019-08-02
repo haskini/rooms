@@ -24,9 +24,11 @@ trait UserRoutes {
         (get & checkAuth) { maybeJwt =>
           log.info("[GET] /user")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(jwt) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(jwt) =>
               parameters('email.?) { input =>
                 val email = input match {
                   case Some(param) => param
@@ -52,9 +54,9 @@ trait UserRoutes {
         } ~ (post & checkAuth) { maybeJwt =>
           log.info("[POST] /user")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(_) =>
+            case Some(_) =>
+              completeWithLog(Errors.signedIn, StatusCodes.BadRequest)
+            case None =>
               entity(as[String]) { data =>
                 parse(data).extractOpt[InModels.CreateUser] match {
                   case Some(input) =>
@@ -85,9 +87,11 @@ trait UserRoutes {
         } ~ (put & checkAuth) { maybeJwt =>
           log.info("[PUT] /user")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(jwt) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(jwt) =>
               entity(as[String]) { data =>
                 parse(data).extractOpt[InModels.UpdateUser] match {
                   case Some(input) =>
@@ -118,9 +122,11 @@ trait UserRoutes {
         } ~ (delete & checkAuth) { maybeJwt =>
           log.info("[DELETE] /user")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(jwt) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(jwt) =>
               entity(as[String]) { data =>
                 parse(data).extractOpt[InModels.DeleteUser] match {
                   case Some(input) =>
@@ -151,9 +157,11 @@ trait UserRoutes {
         (get & checkAuth) { maybeJwt =>
           log.info("[GET] /users")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(_) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(_) =>
               parameters('page.as[Int] ? 1, 'limit.as[Int] ? 10) { (page, limit) =>
                 val result: Future[OutModels.GetUsers] =
                   (userActor ? GetUsers(InModels.GetUsers(page, limit))).mapTo[OutModels.GetUsers]
@@ -172,15 +180,14 @@ trait UserRoutes {
         (get & checkAuth) { maybeJwt =>
           log.info("[GET] /session")
           maybeJwt match {
-            case Right(_) => completeWithLog(Messages.signedIn, StatusCodes.OK)
-            case Left(error) =>
-              completeWithLog(Messages.signedOut, StatusCodes.Unauthorized)
+            case Some(_) => completeWithLog(Messages.signedIn, StatusCodes.OK)
+            case None => completeWithLog(Messages.signedOut, StatusCodes.Unauthorized)
           }
         } ~ (post & checkAuth) { maybeJwt =>
           log.info("[POST] /session")
           maybeJwt match {
-            case Right(_) => completeWithLog(Errors.signedIn, StatusCodes.BadRequest)
-            case Left(error) =>
+            case Some(_) => completeWithLog(Errors.signedIn, StatusCodes.BadRequest)
+            case None =>
               entity(as[String]) { data =>
                 parse(data).extractOpt[InModels.CheckPassword] match {
                   case Some(input) =>
@@ -213,10 +220,12 @@ trait UserRoutes {
         } ~ (delete & checkAuth) { maybeJwt =>
           log.info("[DELETE] /session")
           maybeJwt match {
-            case Left(error) =>
+            case Some(_) =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Messages.signedOut, StatusCodes.OK)
+              }
+            case None => resetJwt() {
               completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(_) => resetJwt() {
-              completeWithLog(Messages.signedOut, StatusCodes.OK)
             }
           }
         }
