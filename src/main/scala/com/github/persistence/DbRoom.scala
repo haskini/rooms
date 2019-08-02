@@ -5,8 +5,8 @@ import com.github.common.DbModels.{Booking, Room}
 import com.github.common._
 import org.bson.json.JsonWriterSettings
 import org.json4s.DefaultFormats
-import org.json4s.jackson.JsonMethods.parse
-import org.json4s.jackson.Serialization.write
+import org.json4s.native.Serialization._
+import org.json4s.native.JsonMethods._
 import org.mongodb.scala.bson.BsonInt64
 import org.mongodb.scala.{Document, MongoCollection}
 import org.mongodb.scala.model.Filters.equal
