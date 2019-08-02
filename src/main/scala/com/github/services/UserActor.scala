@@ -97,14 +97,18 @@ class UserActor extends Actor with ActorLogging {
     val s = sender
     DbUser.GetUser(jwt.email) map {
       case Right(user) =>
-        DbUser.UpdateUser(user.email, DbModels.User(
-          email = input.email,
-          passHash = user.passHash,
-          name = input.name,
-          isAdmin = input.isAdmin
-        )) map {
-          case None => s ! Messages.updated
-          case Some(error) => ErrorHandler(s, error)
+        DbUser.GetUser(input.email) map {
+          case Right(_) => s ! Errors.userExists
+          case Left(error) => ErrorHandler(s, error, notFound = Option(_ =>
+            DbUser.UpdateUser(user.email, DbModels.User(
+              email = input.email,
+              passHash = user.passHash,
+              name = input.name,
+              isAdmin = input.isAdmin
+            )) map {
+              case None => s ! Messages.updated
+              case Some(error) => ErrorHandler(s, error)
+            }))
         }
       case Left(error) => ErrorHandler(s, error)
     }

@@ -22,8 +22,8 @@ case object InModels {
     final case class GetRoom(number: String)
     final case class GetRooms(page: Int, limit: Int)
     final case class CreateRoom(number: String)
-    final case class BookRoom(number: String, start: DateTime, stop: DateTime)
-    final case class FreeRoom(number: String, start: DateTime)
+    final case class BookRoom(number: String, start: Long, stop: Long)
+    final case class FreeRoom(number: String, start: Long)
     final case class DeleteRoom(number: String)
 }
 
@@ -31,7 +31,7 @@ case object InModels {
 
 case object OutModels {
     // Helpers
-    final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
+    final case class Booking(start: Long, stop: Long, userEmail: String)
     
     // Messages
     sealed trait MessageWithCode

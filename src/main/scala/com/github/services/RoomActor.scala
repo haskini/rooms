@@ -1,6 +1,7 @@
 package com.github.services
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.http.scaladsl.model.DateTime
 import com.github.common._
 import com.github.persistence.DbRoom
 
@@ -46,8 +47,8 @@ class RoomActor extends Actor with ActorLogging {
     OutModels.GetRoom(
       number = data.number,
       bookings = data.bookings.map(booking => OutModels.Booking(
-        start = booking.start,
-        stop = booking.stop,
+        start = booking.start.clicks / 1000,
+        stop = booking.stop.clicks / 1000,
         userEmail = booking.userEmail,
       ))
     )
@@ -106,12 +107,12 @@ class RoomActor extends Actor with ActorLogging {
     DbRoom.GetRoom(input.number) map {
       case Right(room) =>
         // Intersecting ranges exists
-        if (room.bookings.exists(booking => booking.start < input.stop && booking.stop > input.start))
+        if (room.bookings.exists(booking => booking.start.clicks / 1000 < input.stop && booking.stop.clicks / 1000 > input.start))
           s ! Errors.roomBusy
         else
           DbRoom.BookRoom(room.number, DbModels.Booking(
-            start = input.start,
-            stop = input.stop,
+            start = DateTime(input.start * 1000),
+            stop = DateTime(input.stop * 1000),
             userEmail = jwt.email,
           )) map {
             case None => s ! Messages.updated
@@ -125,8 +126,8 @@ class RoomActor extends Actor with ActorLogging {
     val s = sender
     DbRoom.GetRoom(input.number) map {
       case Right(room) =>
-        if (room.bookings.exists(_.start == input.start))
-          room.bookings.filter(_.start == input.start).foreach(booking =>
+        if (room.bookings.exists(_.start.clicks / 1000 == input.start))
+          room.bookings.filter(_.start.clicks / 1000 == input.start).foreach(booking =>
             if (jwt.isAdmin || booking.userEmail == jwt.email)
               DbRoom.FreeRoom(room.number, booking.start) map {
                 case None => s ! Messages.updated
