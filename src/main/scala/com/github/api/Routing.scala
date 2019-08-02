@@ -43,15 +43,15 @@ trait Routing {
     }
   }
   
-  def checkAuth: Directive1[Either[Option[ErrorType], JwtModel]] = {
+  def checkAuth: Directive1[Option[JwtModel]] = {
     optionalCookie(jwtCookieName) map {
       case Some(cookie) =>
         val claim: JwtClaim = JwtJson4s.decode(cookie.value, jwtSecret, Seq(jwtAlgo)).getOrElse(JwtClaim())
         getJwtData(claim.content) match {
-          case Some(jwt) => Right(jwt)
-          case None => Left(Option(JwtInvalid.asInstanceOf[ErrorType]))
+          case Some(jwt) => Option(jwt)
+          case None => None
         }
-      case None => Left(None)
+      case None => None
     }
   }
   

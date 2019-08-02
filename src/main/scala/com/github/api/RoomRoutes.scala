@@ -23,15 +23,11 @@ trait RoomRoutes {
         (get & checkAuth) { maybeJwt =>
           log.info("[GET] /room")
           maybeJwt match {
-            case Left(error) => error match {
-              case Some(JwtInvalid) =>
-                deleteCookie(jwtCookieName) {
-                  completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-                }
-              case _ =>
+            case None =>
+              deleteCookie(jwtCookieName) {
                 completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            }
-            case Right(_) =>
+              }
+            case Some(_) =>
               parameter('number.?) {
                 case Some(number) =>
                   val answer = roomActor ? GetRoom(InModels.GetRoom(number))
@@ -56,9 +52,11 @@ trait RoomRoutes {
         } ~ (post & checkAuth) { maybeJwt =>
           log.info("[POST] /room")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(_) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(_) =>
               entity(as[String]) { data =>
                 parse(data).extractOpt[InModels.CreateRoom] match {
                   case Some(input) =>
@@ -83,9 +81,11 @@ trait RoomRoutes {
         } ~ (delete & checkAuth) { maybeJwt =>
           log.info("[DELETE] /room")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(_) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(_) =>
               entity(as[String]) { data =>
                 parse(data).extractOpt[InModels.DeleteRoom] match {
                   case Some(input) =>
@@ -114,9 +114,11 @@ trait RoomRoutes {
         (post & checkAuth) { maybeJwt =>
           log.info("[POST] /booking")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(jwt) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(jwt) =>
               entity(as[String]) { data =>
                 parse(data).extractOpt[InModels.BookRoom] match {
                   case Some(input) =>
@@ -141,9 +143,11 @@ trait RoomRoutes {
         } ~ (delete & checkAuth) { maybeJwt =>
           log.info("[DELETE] /booking")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(jwt) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(jwt) =>
               entity(as[String]) { data =>
                 parse(data).extractOpt[InModels.FreeRoom] match {
                   case Some(input) =>
@@ -172,9 +176,11 @@ trait RoomRoutes {
         (get & checkAuth) { maybeJwt =>
           log.info("[GET] /rooms")
           maybeJwt match {
-            case Left(error) =>
-              completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
-            case Right(_) =>
+            case None =>
+              deleteCookie(jwtCookieName) {
+                completeWithLog(Errors.signedOut, StatusCodes.Unauthorized)
+              }
+            case Some(_) =>
               parameters('page.as[Int] ? 1, 'limit.as[Int] ? 10) { (page, limit) =>
                 val result: Future[OutModels.GetRooms] =
                   (roomActor ? GetRooms(InModels.GetRooms(page, limit))).mapTo[OutModels.GetRooms]
