@@ -3,8 +3,8 @@ package com.github.persistence
 import com.github.common._
 import com.github.common.DbModels.User
 import org.json4s._
-import org.json4s.jackson.Serialization._
-import org.json4s.jackson.JsonMethods._
+import org.json4s.native.Serialization._
+import org.json4s.native.JsonMethods._
 import org.mongodb.scala.{ Document, MongoCollection}
 import org.mongodb.scala.model.Filters._
 
