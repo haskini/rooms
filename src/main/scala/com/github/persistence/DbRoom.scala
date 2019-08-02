@@ -46,7 +46,8 @@ object DbRoom {
     def GetRoom(number: String): Future[Either[ErrorType, Room]] = {
         val documentsSeqFuture: Future[Seq[Document]] = roomsCollection.find(equal("number", number)).toFuture()
         documentsSeqFuture.map{
-            value: Seq[Document] =>
+            case Seq() => Left(NotFound)
+            case value: Seq[Document] =>
                 val settings: JsonWriterSettings = JsonWriterSettings.builder()
                     .int64Converter((v, writer) => writer.writeNumber(v.toString)).build()
                 
@@ -54,19 +55,20 @@ object DbRoom {
                 val dbRoom = parse(json).extract[DbRoom]
                 Right(Converter.DbRoomToRoom(dbRoom))
         }.recover{
-            case _ => Left(NotFound)
+            case _ => Left(DbError("[DB ERROR] Can't get room"))
         }
     }
     
     def GetRooms(skip: Int, limit: Int): Future[Either[ErrorType, List[Room]]] = {
         roomsCollection.find().limit(limit).skip(skip).toFuture().map{
-            documents: Seq[Document] =>
+            case  Seq() => Right(List())
+            case documents: Seq[Document] =>
                 val dbRoomsList: List[DbRoom] = documents.map{ doc =>
                     parse(doc.toJson).extract[DbRoom] // Convert Documents from Seq to DbRoom Objects
                 }.toList // and create List of DbRoom's
                 Right(dbRoomsList.map(Converter.DbRoomToRoom)) // Then convert all DbRoom's to Room's
         }.recover{
-            case _ => Left(NotFound)
+            case _ => Left(DbError("[DB ERROR] Can't get rooms"))
         }
     }
     
