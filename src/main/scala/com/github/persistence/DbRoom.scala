@@ -4,8 +4,8 @@ import akka.http.scaladsl.model.DateTime
 import com.github.common.DbModels.{Room, User}
 import com.github.common._
 import org.json4s.DefaultFormats
-import org.json4s.jackson.JsonMethods.parse
-import org.json4s.jackson.Serialization.write
+import org.json4s.native.JsonMethods.parse
+import org.json4s.native.Serialization.write
 import org.mongodb.scala.{Document, MongoCollection}
 import org.mongodb.scala.model.Filters.equal
 
