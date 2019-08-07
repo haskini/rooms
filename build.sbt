@@ -32,6 +32,6 @@ lazy val root = (project in file(".")).
             "org.scalatest" %% "scalatest" % scalatestVersion % Test,
             "com.softwaremill.sttp" %% "core" % softwaremillVersion % Test,
             "com.github.simplyscala" %% "scalatest-embedmongo" % EmbedmongoVersion % Test
-        
+        ),
         parallelExecution in Test := false
-)
+    )
