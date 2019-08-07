@@ -16,7 +16,7 @@ class DbRoomTest extends AsyncFunSuite with Matchers {
     val roomInDb1 = DbModels.Room("1", List(bookingInDb1, bookingInDb2))
     val roomInDb2 = DbModels.Room("2", List(bookingInDb3))
     
-    test ("Get Room1 from MongoDB") {
+    ignore ("Get Room1 from MongoDB") {
         GetRoom("1") map {
             case Right(r) => r shouldBe roomInDb1
             case Left(_) => fail
