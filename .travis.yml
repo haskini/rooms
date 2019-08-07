@@ -3,4 +3,4 @@ scala: 2.12.8
 jdk: openjdk10
 services: mongodb
 before_script:
-  - mongorestore src/test/mongoDbTestData
+  - mongorestore -d rooms src/test/mongoDbTestData
