@@ -5,6 +5,8 @@ import com.github.persistence.DbUser._
 import org.scalatest.{Assertion, AsyncFunSuite, Matchers}
 import scala.concurrent.Future
 
+// TODO: Add messages to fail(msg)
+
 class DbUserTest extends AsyncFunSuite with Matchers {
 
     val userInDb1 = DbModels.User("test1@email.com", "12345", "TestName1", isAdmin = true)
