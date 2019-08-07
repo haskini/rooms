@@ -1,4 +1,4 @@
-languadge: scala
+language: scala
 scala: 2.12.8
 jdk: openjdk10
 services: mongodb
