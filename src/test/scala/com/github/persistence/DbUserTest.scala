@@ -8,9 +8,8 @@ import scala.concurrent.Future
 // TODO: Add messages to fail(msg)
 
 class DbUserTest extends AsyncFunSuite with Matchers {
-
-    val userInDb1 = DbModels.User("test1@email.com", "12345", "TestName1", isAdmin = true)
-    val userInDb2 = DbModels.User("test2@email.com", "54321", "TestName2", isAdmin = false)
+    
+    import com.github.persistence.UsersTestData._
     
     test("Get User1 from MongoDB") {
         GetUser("test1@email.com") map {
