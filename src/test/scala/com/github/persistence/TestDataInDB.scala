@@ -9,8 +9,8 @@ object UsersTestData {
 }
 
 object RoomsTestData {
-    val bookingInDb1 = DbModels.Booking(DateTime(1898640000000L), DateTime(1930176000000L), "test2@email.com")
-    val bookingInDb2 = DbModels.Booking(DateTime(1993334400000L), DateTime(2340489600000L), "test1@email.com")
+    val bookingInDb1 = DbModels.Booking(DateTime(1993334400000L), DateTime(2340489600000L), "test1@email.com")
+    val bookingInDb2 = DbModels.Booking(DateTime(1898640000000L), DateTime(1930176000000L), "test2@email.com")
     val bookingInDb3 = DbModels.Booking(DateTime(2003334400000L), DateTime(2013334400000L), "test2@email.com")
     
     val roomInDb1 = DbModels.Room("1", List(bookingInDb1, bookingInDb2))
