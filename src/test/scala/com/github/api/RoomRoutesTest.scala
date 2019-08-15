@@ -205,6 +205,8 @@ class RoomRoutesTest extends WordSpec with Matchers with ScalaFutures with Scala
             }
         }
         
+        
+        // TODO fix json4s extract
         "[GET] /rooms : Return all rooms" ignore {
             Get("/rooms") ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
                 status shouldBe StatusCodes.OK
@@ -213,7 +215,8 @@ class RoomRoutesTest extends WordSpec with Matchers with ScalaFutures with Scala
 //                setRooms shouldBe Set(roomInDb1, roomInDb2)
             }
         }
-    
+        
+        // TODO fix json4s extract
         "[GET] /rooms?page=0&limit=0 : Return all rooms" ignore {
             Get("/rooms?page=0&limit=0") ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
                 status shouldBe StatusCodes.OK
@@ -222,7 +225,8 @@ class RoomRoutesTest extends WordSpec with Matchers with ScalaFutures with Scala
 //                setRooms shouldBe Set(roomInDb1, roomInDb2)
             }
         }
-    
+        
+        // TODO fix json4s extract
         "[GET] /rooms?page=1&limit=0 : Return set with size eq 1" ignore {
             Get("/rooms?page=1&limit=0") ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
                 status shouldBe StatusCodes.OK
@@ -232,6 +236,7 @@ class RoomRoutesTest extends WordSpec with Matchers with ScalaFutures with Scala
             }
         }
     
+        // TODO fix json4s extract
         "[GET] /rooms?page=0&limit=1 : Return set with size eq 1" ignore {
             Get("/rooms?page=0&limit=1") ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
                 status shouldBe StatusCodes.OK
