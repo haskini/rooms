@@ -50,7 +50,7 @@ class UserActor extends Actor with ActorLogging {
     )
   }
   
-  private def DbToApiUsers(data: List[DbModels.User]): OutModels.GetUsers = {
+  private def DbToApiUsers(data: Set[DbModels.User]): OutModels.GetUsers = {
     OutModels.GetUsers(data.map(user => DbToApiUser(user)))
   }
   

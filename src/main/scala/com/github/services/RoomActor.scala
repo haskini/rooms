@@ -53,7 +53,7 @@ class RoomActor extends Actor with ActorLogging {
     )
   }
   
-  private def DbToApiRooms(data: List[DbModels.Room]): OutModels.GetRooms = {
+  private def DbToApiRooms(data: Set[DbModels.Room]): OutModels.GetRooms = {
     OutModels.GetRooms(data.map(room => DbToApiRoom(room)))
   }
   
@@ -72,7 +72,7 @@ class RoomActor extends Actor with ActorLogging {
       case Left(error) => ErrorHandler(s, error, notFound = Option(s => {
         DbRoom.CreateRoom(DbModels.Room(
           number = input.number,
-          bookings = List(),
+          bookings = Set(),
         )) map {
           case None => s ! Messages.created
           case Some(error) => ErrorHandler(s, error)
