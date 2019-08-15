@@ -51,7 +51,7 @@ case object OutModels {
 
 case object DbModels {
     // Helpers
-    final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
+    final case class Booking(start: Long, stop: Long, userEmail: String)
     
     // Real data
     final case class User(email: String, passHash: String, name: String, isAdmin: Boolean)

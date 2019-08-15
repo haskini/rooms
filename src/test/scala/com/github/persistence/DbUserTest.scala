@@ -25,9 +25,9 @@ class DbUserTest extends AsyncFunSuite with Matchers {
         }
     }
     
-    test ("Get Users(0,0) from MongoDB should be List(<User1>, <User2>)" ) {
+    test ("Get Users(0,0) from MongoDB should be Set(<User1>, <User2>)" ) {
         GetUsers(0, 0) map {
-            case Right(r) => r shouldBe List(
+            case Right(r) => r shouldBe Set(
                 userInDb1,
                 userInDb2
             )
@@ -35,114 +35,105 @@ class DbUserTest extends AsyncFunSuite with Matchers {
         }
     }
     
-    test ("Get Users(1,0) from MongoDB should be List(<User2>)" ) {
+    test ("Get Users(1,0) from MongoDB should be Set(<User2>)" ) {
         GetUsers(1, 0) map {
-            case Right(r) => r shouldBe List(
+            case Right(r) => r shouldBe Set(
                 userInDb2
             )
             case Left(_) => fail
         }
     }
     
-    test ("Get Users(0,1) from MongoDB should be List(<User1>)" ) {
+    test ("Get Users(0,1) from MongoDB should be Set(<User1>)" ) {
         GetUsers(0, 1) map {
-            case Right(r) => r shouldBe List( userInDb1 )
+            case Right(r) => r shouldBe Set( userInDb1 )
             case Left(_) => fail
         }
     }
     
-    test ("Get Users(1,1) from MongoDB should be List(<User2>)" ) {
+    test ("Get Users(1,1) from MongoDB should be Set(<User2>)" ) {
         GetUsers(1, 1) map {
-            case Right(r) => r shouldBe List( userInDb2 )
+            case Right(r) => r shouldBe Set( userInDb2 )
             case Left(_) => fail
         }
     }
     
     
-    def checkUser(email: String, checkedUser: DbModels.User): Future[Assertion] = {
+    def checkUserForCreateUser(email: String, checkedUser: DbModels.User): Future[Assertion] = {
         GetUser(email) map {
-            case Right(user) => user shouldBe checkedUser
-            case Left(_) => fail
+            case Right(user) =>
+                DeleteUser(email)
+                user shouldBe checkedUser
+            case Left(_) =>
+                DeleteUser(email)
+                fail
         }
     }
     
     test ("Create User in MongoDB") {
         val createdUser = DbModels.User("createUserEmail@email.com", "09876", "CreatedUser", isAdmin = false)
     
-        CreateUser(createdUser) map {
+        CreateUser(createdUser) flatMap  {
             case Some(_) => fail // equal to: case error => fail
-            case None => checkUser("createUserEmail@email.com", createdUser)
-        }
-    
-        DeleteUser("createUserEmail@email.com") map {
-            case Some(_) => fail
-            case None => succeed
+            case None => checkUserForCreateUser("createUserEmail@email.com", createdUser)
         }
     }
     
-    def updateUserInDb2ToOriginal(): Future[Assertion] ={
-        UpdateUser("test2@email.com", userInDb2) map {
-            case Some(_) => fail
-            case None => succeed
+    def checkUserForUpdateUser(updatedUser: DbModels.User, originalUser: DbModels.User): Future[Assertion] ={
+        GetUser(updatedUser.email) flatMap {
+            case Right(user) =>
+                DeleteUser(updatedUser.email)
+                CreateUser(originalUser)
+                user shouldBe updatedUser
+            case Left(_) =>
+                DeleteUser(updatedUser.email)
+                CreateUser(originalUser)
+                fail
         }
     }
     
     test("Update User's isAdmin field in MongoDB") {
         val updatedUser: DbModels.User = userInDb2.copy(isAdmin = true)
         
-        UpdateUser("test2@email.com", updatedUser) map {
+        UpdateUser("test2@email.com", updatedUser) flatMap {
             case Some(_) => fail
-            case None => checkUser("test2@email.com", updatedUser)
+            case None => checkUserForUpdateUser(updatedUser, userInDb2)
         }
-        updateUserInDb2ToOriginal()
     }
     
     test("Update User's name field in MongoDB") {
         val updatedUser: DbModels.User = userInDb2.copy(name = "UpdatedUserName")
         
-        UpdateUser("test2@email.com", updatedUser) map {
+        UpdateUser("test2@email.com", updatedUser) flatMap {
             case Some(_) => fail
-            case None => checkUser("test2@email.com", updatedUser)
+            case None => checkUserForUpdateUser(updatedUser, userInDb2)
         }
-    
-        updateUserInDb2ToOriginal()
     }
     
     test("Update User's passHash field in MongoDB") {
         val updatedUser: DbModels.User = userInDb2.copy(passHash = "UpdatedPassHash")
         
-        UpdateUser("test2@email.com", updatedUser) map {
+        UpdateUser("test2@email.com", updatedUser) flatMap  {
             case Some(_) => fail
-            case None => checkUser("test2@email.com", updatedUser)
+            case None => checkUserForUpdateUser(updatedUser, userInDb2)
         }
-        
-        updateUserInDb2ToOriginal()
     }
     
     test("Update User's email field in MongoDB") {
         val updatedUser: DbModels.User = userInDb2.copy(email = "Updated@email.com")
         
-        UpdateUser("test2@email.com", updatedUser) map {
+        UpdateUser("test2@email.com", updatedUser) flatMap {
             case Some(_) => fail
-            case None => checkUser("test2@email.com", updatedUser)
-        }
-    
-        // and than return original userInDb2
-        UpdateUser("Updated@email.com", userInDb2) map {
-            case Some(_) => fail
-            case None => succeed
+            case None => checkUserForUpdateUser(updatedUser, userInDb2)
         }
     }
     
     test ("Delete User from MongoDB") {
-        DeleteUser("test2@email.com") map {
+        DeleteUser("test2@email.com") flatMap {
             case Some(_) => fail
-            case None => succeed
-        }
-        
-        CreateUser(userInDb2) map {
-            case Some(_) => fail
-            case None => succeed
+            case None =>
+                CreateUser(userInDb2)
+                succeed
         }
     }
 }

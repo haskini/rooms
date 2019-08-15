@@ -1,6 +1,5 @@
 package com.github.persistence
 
-import akka.http.scaladsl.model.DateTime
 import com.github.common.DbModels.{Booking, Room}
 import com.github.common._
 import org.bson.json.JsonWriterSettings
@@ -14,29 +13,6 @@ import org.mongodb.scala.model.Updates._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-
-protected final case class DbBooking(start: Long, stop: Long, userEmail: String)
-protected final case class DbRoom(number: String, bookings: Set[DbBooking])
-
-private object Converter {
-    def BookingToDbBooking(booking: Booking): DbBooking = {
-        DbBooking(booking.start.clicks, booking.stop.clicks, booking.userEmail)
-    }
-    
-    def DbBookingToBooking(dbBooking: DbBooking): Booking = {
-        val start: DateTime = DateTime(dbBooking.start)
-        val stop = DateTime(dbBooking.stop)
-        Booking(start, stop, dbBooking.userEmail)
-    }
-    
-    def RoomToDbRoom(room: Room): DbRoom = {
-        DbRoom(room.number, room.bookings.map(BookingToDbBooking))
-    }
-    
-    def DbRoomToRoom(dbRoom: DbRoom): Room = {
-        Room(dbRoom.number, dbRoom.bookings.map(DbBookingToBooking))
-    }
-}
 
 object DbRoom {
     
@@ -52,8 +28,7 @@ object DbRoom {
             case Seq() => Left(NotFound)
             case value: Seq[Document] =>
                 val json = value.head.toJson(settings)
-                val dbRoom = parse(json).extract[DbRoom]
-                Right(Converter.DbRoomToRoom(dbRoom))
+                Right(parse(json).extract[Room])
         }.recover{
             case _ => Left(DbError("[DB ERROR] Can't get room"))
         }
@@ -63,10 +38,10 @@ object DbRoom {
         roomsCollection.find().limit(limit).skip(skip).toFuture().map{
             case Seq() => Right(Set[Room]())
             case documents: Seq[Document] =>
-                val dbRoomsSet: Set[DbRoom] = documents.map{ doc =>
-                    parse(doc.toJson(settings)).extract[DbRoom] // Convert Documents from Seq to DbRoom Objects
+                val roomsSet: Set[Room] = documents.map{ doc =>
+                    parse(doc.toJson(settings)).extract[Room] // Convert Documents from Seq to DbRoom Objects
                 }.toSet // and create Set of DbRoom's
-                Right(dbRoomsSet.map(Converter.DbRoomToRoom)) // Then convert all DbRoom's to Room's
+                Right(roomsSet) // Then convert all DbRoom's to Room's
         }.recover{
             case _ => Left(DbError("[DB ERROR] Can't get rooms"))
         }
@@ -74,7 +49,7 @@ object DbRoom {
     
     // returns None if was created
     def CreateRoom(newData: Room): Future[Option[ErrorType]] = {
-        val createRoomJson = write(Converter.RoomToDbRoom(newData))
+        val createRoomJson = write(newData)
         val roomDoc: Document = Document(createRoomJson)
         roomsCollection.insertOne(roomDoc).toFuture().map({
             _ => None
@@ -92,8 +67,7 @@ object DbRoom {
     }
     
     def BookRoom(number: String, newData: Booking): Future[Option[ErrorType]] = {
-        val dbBooking = Converter.BookingToDbBooking(newData)
-        val dbBookingDoc = Document(write(dbBooking)).toBsonDocument
+        val dbBookingDoc = Document(write(newData)).toBsonDocument
         roomsCollection.findOneAndUpdate( equal("number", number),
             push("bookings", dbBookingDoc)).toFuture().
             map {
@@ -103,9 +77,9 @@ object DbRoom {
         }
     }
     
-    def FreeRoom(number: String, start: DateTime): Future[Option[ErrorType]] = {
+    def FreeRoom(number: String, start: Long): Future[Option[ErrorType]] = {
         roomsCollection.findOneAndUpdate(equal("number", number),
-            pull("bookings", equal("start", BsonInt64(start.clicks)))
+            pull("bookings", equal("start", BsonInt64(start)))
         ).toFuture().map {
             _ => None
         }.recover {

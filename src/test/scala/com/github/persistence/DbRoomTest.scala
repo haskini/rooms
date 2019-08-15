@@ -1,6 +1,5 @@
 package com.github.persistence
 
-import akka.http.scaladsl.model.DateTime
 import com.github.common.DbModels
 import com.github.persistence.DbRoom._
 import org.scalatest.{Assertion, AsyncFunSuite, Matchers}
@@ -26,9 +25,9 @@ class DbRoomTest extends AsyncFunSuite with Matchers {
         }
     }
     
-    test ("Get Rooms(0,0) from MongoDB should be List(<Room1>, <Room2>)" ) {
+    test ("Get Rooms(0,0) from MongoDB should be Set(<Room1>, <Room2>)" ) {
         GetRooms(0, 0) map {
-            case Right(r) => r shouldBe List(
+            case Right(r) => r shouldBe Set(
                 roomInDb1,
                 roomInDb2
             )
@@ -36,139 +35,115 @@ class DbRoomTest extends AsyncFunSuite with Matchers {
         }
     }
 
-    test ("Get Rooms(1,0) from MongoDB should be List(<Room2>)" ) {
+    test ("Get Rooms(1,0) from MongoDB size should be 1" ) {
         GetRooms(1, 0) map {
-            case Right(r) => r shouldBe List( roomInDb2 )
+            case Right(r) => r.size shouldBe 1
             case Left(_) => fail
         }
     }
 
-    test ("Get Rooms(0,1) from MongoDB should be List(<Room1>)" ) {
+    test ("Get Rooms(0,1) from MongoDB size should be 1" ) {
         GetRooms(0, 1) map {
-            case Right(r) => r shouldBe List( roomInDb1 )
+            case Right(r) => r.size shouldBe 1
             case Left(_) => fail
         }
     }
 
-    test ("Get Rooms(1,1) from MongoDB should be List(<Room2>)" ) {
+    test ("Get Rooms(1,1) from MongoDB size should be 1" ) {
         GetRooms(1, 1) map {
-            case Right(r) => r shouldBe List( roomInDb2 )
+            case Right(r) => r.size shouldBe 1
             case Left(_) => fail
         }
     }
 
-    def checkRoom(number: String, checkedRoom: DbModels.Room): Future[Assertion] = {
+    def checkRoomForCreateRoomTests(number: String, checkedRoom: DbModels.Room): Future[Assertion] = {
         GetRoom(number) map {
-            case Right(room) => room shouldBe checkedRoom
-            case Left(_) => fail
+            case Right(room) =>
+                DeleteRoom("3") // now we can delete created room
+                room shouldBe checkedRoom
+            case Left(_) =>
+                DeleteRoom("3")
+                fail
         }
     }
-
-    def deleteRoom(number: String): Future[Assertion] = {
-        DeleteRoom(number) map {
-            case Some(_) => fail
-            case None => succeed
-        }
-    }
-
     
-    // TODO: remove deleteRoom into case Success
     test ("Create Room with zero bookings in MongoDB") {
-        val createdRoom = DbModels.Room("3", List())
+        val createdRoom = DbModels.Room("3", Set[DbModels.Booking]())
 
-        CreateRoom(createdRoom) map {
+        CreateRoom(createdRoom) flatMap {
             case Some(_) => fail // equal to: case error => fail
-            case None => checkRoom("3", createdRoom)
+            case None => checkRoomForCreateRoomTests("3", createdRoom)
         }
-        
-        deleteRoom("3")
     }
 
     test ("Create Room with 1 booking in MongoDB") {
-        val bkng1 = DbModels.Booking(DateTime(5553334400000L), DateTime(6660489600000L), "test1@email.com")
-        val createdRoom = DbModels.Room("3", List(bkng1))
+        val bkng1 = DbModels.Booking(1262307661L, 1293843661L, "test1@email.com")
+        val createdRoom = DbModels.Room("3", Set(bkng1))
 
-        CreateRoom(createdRoom) map {
+        CreateRoom(createdRoom) flatMap {
             case Some(_) => fail // equal to: case error => fail
-            case None => checkRoom("3", createdRoom)
+            case None => checkRoomForCreateRoomTests("3", createdRoom)
         }
-
-        deleteRoom("3")
     }
 
     test ("Create Room with 2 bookings in MongoDB") {
-        val bkng1 = DbModels.Booking(DateTime(4443334400000L), DateTime(5550489600000L), "test1@email.com")
-        val bkng2 = DbModels.Booking(DateTime(4448640000000L), DateTime(5550176000000L), "test2@email.com")
-        val createdRoom = DbModels.Room("3", List(bkng1, bkng2))
+        val bkng1 = DbModels.Booking(1272307661L, 1303843661L, "test1@email.com")
+        val bkng2 = DbModels.Booking(1372307661L, 1403843661L, "test2@email.com")
+        val createdRoom = DbModels.Room("3", Set(bkng1, bkng2))
 
-        CreateRoom(createdRoom) map {
+        CreateRoom(createdRoom) flatMap {
             case Some(_) => fail // equal to: case error => fail
-            case None => checkRoom("3", createdRoom)
+            case None => checkRoomForCreateRoomTests("3", createdRoom)
         }
-
-        deleteRoom("3")
     }
-    
+
     test ("FreeRoom") {
-        FreeRoom("1", bookingInDb2.start) map {
+        FreeRoom("1", bookingInDb2.start) flatMap {
             case Some(_) => fail
-            case None => succeed
-        }
-        
-        BookRoom("1", bookingInDb2) map {
-            case Some(_) => fail
-            case None => succeed
-        }
-    }
-    
-    test ("BookRoom in MongoDB") {
-        val newBooking = DbModels.Booking(DateTime(6000489600000L), DateTime(7000489600000L), "test1@email.com")
-        
-        BookRoom("1", newBooking) map {
-            case Some(_) => fail
-            case None => succeed
-        }
-        
-        FreeRoom("1", newBooking.start) map {
-            case Some(_) => fail
-            case None => succeed
+            case None =>
+                BookRoom("1", bookingInDb2) map {
+                    case Some(_) => fail
+                    case None => succeed
+                }
         }
     }
-    
-    test ("BookRoom in room where bookings is empty in MongoDB") {
-        FreeRoom("2", bookingInDb3.start) map {
-            case Some(_) => fail
-            case None => succeed
-        }
-        // now bookings list is empty
-        
-        val newBooking = DbModels.Booking(DateTime(6000489600000L), DateTime(7000489600000L), "test1@email.com")
-        BookRoom("2", newBooking) map {
-            case Some(_) => fail
-            case None => succeed
-        }
-        
-        // return deleted booking
-        BookRoom("2", bookingInDb3) map {
-            case Some(_) => fail
-            case None => succeed
-        }
-        // delete created booking
-        FreeRoom("2", newBooking.start) map {
-            case Some(_) => fail
-            case None => succeed
-        }
-    }
-    
-    test ("Delete Room from MongoDB") {
-        DeleteRoom("1") map {
-            case Some(_) => fail
-            case None => succeed
-        }
 
-        CreateRoom(roomInDb1) map {
+    test ("BookRoom in MongoDB") {
+        val newBooking = DbModels.Booking(883616461L, 915152461L, "test1@email.com")
+
+        BookRoom("1", newBooking) flatMap {
             case Some(_) => fail
-            case None => succeed
+            case None =>
+                FreeRoom("1", newBooking.start) flatMap {
+                    case Some(_) => fail
+                    case None => succeed
+                }
+        }
+    }
+
+    test ("BookRoom in room where bookings is empty in MongoDB") {
+        val createdRoom = DbModels.Room("3", Set[DbModels.Booking]())
+        
+        CreateRoom(createdRoom)
+
+        val newBooking = DbModels.Booking(883616461L, 915152461L, "test1@email.com")
+        
+        BookRoom("3", newBooking) map {
+            case Some(_) =>
+                DeleteRoom("3")
+                fail
+            case None =>
+                DeleteRoom("3")
+                succeed
+        }
+    }
+
+    test ("Delete Room from MongoDB") {
+        DeleteRoom("1") flatMap {
+            case Some(_) => fail
+            case None =>
+                CreateRoom(roomInDb1)
+                succeed
         }
     }
 }
