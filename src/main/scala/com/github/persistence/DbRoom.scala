@@ -16,7 +16,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 protected final case class DbBooking(start: Long, stop: Long, userEmail: String)
-protected final case class DbRoom(number: String, bookings: List[DbBooking])
+protected final case class DbRoom(number: String, bookings: Set[DbBooking])
 
 private object Converter {
     def BookingToDbBooking(booking: Booking): DbBooking = {
@@ -59,14 +59,14 @@ object DbRoom {
         }
     }
     
-    def GetRooms(skip: Int, limit: Int): Future[Either[ErrorType, List[Room]]] = {
+    def GetRooms(skip: Int, limit: Int): Future[Either[DbError, Set[Room]]] = {
         roomsCollection.find().limit(limit).skip(skip).toFuture().map{
-            case  Seq() => Right(List())
+            case Seq() => Right(Set[Room]())
             case documents: Seq[Document] =>
-                val dbRoomsList: List[DbRoom] = documents.map{ doc =>
+                val dbRoomsSet: Set[DbRoom] = documents.map{ doc =>
                     parse(doc.toJson).extract[DbRoom] // Convert Documents from Seq to DbRoom Objects
-                }.toList // and create List of DbRoom's
-                Right(dbRoomsList.map(Converter.DbRoomToRoom)) // Then convert all DbRoom's to Room's
+                }.toSet // and create Set of DbRoom's
+                Right(dbRoomsSet.map(Converter.DbRoomToRoom)) // Then convert all DbRoom's to Room's
         }.recover{
             case _ => Left(DbError("[DB ERROR] Can't get rooms"))
         }

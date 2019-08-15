@@ -40,11 +40,11 @@ case object OutModels {
     
     // User
     final case class GetUser(email: String, name: String, isAdmin: Boolean)
-    final case class GetUsers(users: List[GetUser])
+    final case class GetUsers(users: Set[GetUser])
     
     // Room
-    final case class GetRoom(number: String, bookings: List[OutModels.Booking])
-    final case class GetRooms(rooms: List[GetRoom])
+    final case class GetRoom(number: String, bookings: Set[OutModels.Booking])
+    final case class GetRooms(rooms: Set[GetRoom])
 }
 
 // DB MODELS
@@ -55,7 +55,7 @@ case object DbModels {
     
     // Real data
     final case class User(email: String, passHash: String, name: String, isAdmin: Boolean)
-    final case class Room(number: String, bookings: List[DbModels.Booking])
+    final case class Room(number: String, bookings: Set[DbModels.Booking])
 }
 
 // ERRORS
