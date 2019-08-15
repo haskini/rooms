@@ -103,50 +103,148 @@ class RoomRoutesTest extends WordSpec with Matchers with ScalaFutures with Scala
         
         // TEST [/booking]
         
-        // TODO fix [POST] booking
-        "[POST] /booking : Return [signed out] if not authorized" ignore {
-        
+        "[POST] /booking : Return [signed out] if not authorized" in {
+            val request = Post("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "1", "start": 1565860887, "stop": 1597483287}""")
+            request ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.Unauthorized
+                entityAs[String] shouldBe """{"code":-21,"message":"signed out"}"""
+            }
         }
     
-        // TODO fix [POST] booking
-        "[POST] /booking :  Return [invalid booking] if no booking in room list" ignore {
-        
+        "[POST] /booking : Return [room not found] if room doesn't exist" in {
+            val request = Post("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "3", "start": 1565860887, "stop": 1597483287}""")
+            request ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.BadRequest
+                entityAs[String] shouldBe """{"code":-3,"message":"room not found"}"""
+            }
         }
     
-        // TODO fix [POST] booking
-        "[POST] /booking : Return OK if was booked" ignore {
-        
-        }
-        
-        // TODO fix [DELETE booking]
-        "[DELETE] /booking : Return [signed out] if not authorized" ignore {
-
-        }
-
-        // TODO fix [DELETE] booking
-        "[DELETE] /booking : Return [room not found] when deleting non exist room" ignore {
-
+        "[POST] /booking : Return OK if was booked" in {
+            val request = Post("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "1", "start": 1565860887, "stop": 1597483287}""")
+            request ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.OK
+                entityAs[String] shouldBe """{"code":2,"message":"updated"}"""
+            }
+            FreeRoom("1", 1565860887L)
         }
     
-        // TODO fix [DELETE] booking
-        "[DELETE] /booking : Return [start not fount] when deleting non exist booking" ignore {
+        "[POST] /booking : Return [at selected time room already busy] if attempt to book in booked time" in {
+            val request = Post("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "1", "start": 1104541262, "stop": 1136077260}""")
+            request ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.BadRequest
+                entityAs[String] shouldBe """{"code":-5,"message":"at selected time room already busy"}"""
+            }
+        }
+    
+        "[POST] /booking : Return [at selected time room already busy] if attempt to book in booked time (start earlier, stop in interval)" in {
+            val request = Post("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "1", "start": 1104541260, "stop": 1136077260}""")
+            request ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.BadRequest
+                entityAs[String] shouldBe """{"code":-5,"message":"at selected time room already busy"}"""
+            }
+        }
+    
+        "[POST] /booking : Return [at selected time room already busy] if attempt to book in booked time (start in interval, stop later)" in {
+            val request = Post("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "1", "start": 1104541262, "stop": 1136077262}""")
+            request ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.BadRequest
+                entityAs[String] shouldBe """{"code":-5,"message":"at selected time room already busy"}"""
+            }
+        }
+    
+        "[DELETE] /booking : Return [signed out] if not authorized" in {
+            val request = Delete("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "2", "start": 1564844400}""")
+            request ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.Unauthorized
+                entityAs[String] shouldBe """{"code":-21,"message":"signed out"}"""
+            }
+        }
+
+        "[DELETE] /booking : Return [room not found] when deleting non exist room" in {
+            val request = Delete("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "3", "start": 1104541262}""")
+            request ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.BadRequest
+                entityAs[String] shouldBe """{"code":-3,"message":"room not found"}"""
+            }
+        }
+    
+        "[DELETE] /booking : Return [booking not found] when deleting non exist booking" in {
+            val request = Delete("/booking").withEntity(ContentTypes.`application/json`, """{"number": "1", "start": 1104541262}""")
+            request ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.BadRequest
+                entityAs[String] shouldBe """{"code":-6,"message":"booking not found"}"""
+            }
+        }
         
+        "[DELETE] /booking : Return OK if was deleted" in {
+            val request = Delete("/booking").withEntity(ContentTypes.`application/json`,
+                """{"number": "1", "start": 1104541261}""")
+            request ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.OK
+                entityAs[String] shouldBe """{"code":2,"message":"updated"}"""
+            }
+            DeleteRoom("1")
+            CreateRoom(roomInDb1)
         }
         
         // TEST [/rooms]
         
         "[GET] /rooms : Return [signed out] if not authorized" in {
             Get("/rooms") ~> Route.seal(routesForRoom) ~> check {
+                println(entityAs[String])
                 status shouldBe StatusCodes.Unauthorized
                 entityAs[String] shouldBe """{"code":-21,"message":"signed out"}"""
             }
         }
-    
-        // TODO fix [GET] rooms
-        "[GET] /rooms?page=0&limit=0 : Return all rooms" ignore {
         
+        
+        // TODO fix json4s extract
+        "[GET] /rooms : Return all rooms" ignore {
+            Get("/rooms") ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.OK
+                println(entityAs[String])
+//                val setRooms = parse(entityAs[String]).extract[List[OutModels.GetRoom]]
+//                setRooms shouldBe Set(roomInDb1, roomInDb2)
+            }
         }
         
-        // TODO make some tests with page=X&limit=Y
+        // TODO fix json4s extract
+        "[GET] /rooms?page=0&limit=0 : Return all rooms" ignore {
+            Get("/rooms?page=0&limit=0") ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.OK
+                println(entityAs[String])
+//                val setRooms = read[OutModels.GetRoom](entityAs[String])
+//                setRooms shouldBe Set(roomInDb1, roomInDb2)
+            }
+        }
+        
+        // TODO fix json4s extract
+        "[GET] /rooms?page=1&limit=0 : Return set with size eq 1" ignore {
+            Get("/rooms?page=1&limit=0") ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.OK
+                println(entityAs[String])
+//                val setRooms = read[Set[OutModels.GetRoom]](entityAs[String])
+//                setRooms.size shouldBe 1
+            }
+        }
+    
+        // TODO fix json4s extract
+        "[GET] /rooms?page=0&limit=1 : Return set with size eq 1" ignore {
+            Get("/rooms?page=0&limit=1") ~> Cookie("jwt", validToken) ~> Route.seal(routesForRoom) ~> check {
+                status shouldBe StatusCodes.OK
+                println(entityAs[String])
+//                val setRooms = read[Set[OutModels.GetRoom]](entityAs[String])
+//                setRooms.size shouldBe 1
+            }
+        }
+
     }
 }
