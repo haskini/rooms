@@ -26,10 +26,10 @@ object DbUser {
         documentEitherFuture
     }
     
-    def GetUsers(skip: Int, limit: Int): Future[Either[ErrorType, List[User]]] = {
+    def GetUsers(skip: Int, limit: Int): Future[Either[ErrorType, Set[User]]] = {
         val documentsSkipLimitSeqFuture: Future[Seq[Document]] = userCollection.find().limit(limit).skip(skip).toFuture()
         documentsSkipLimitSeqFuture.map({
-            value: Seq[Document] => Right(value.map(doc => parse(doc.toJson).extract[User]).toList)
+            value: Seq[Document] => Right(value.map(doc => parse(doc.toJson).extract[User]).toSet)
         }).recover{
             case _ => Left(NotFound)
         }

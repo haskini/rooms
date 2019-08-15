@@ -22,8 +22,8 @@ case object InModels {
     final case class GetRoom(number: String)
     final case class GetRooms(page: Int, limit: Int)
     final case class CreateRoom(number: String)
-    final case class BookRoom(number: String, start: DateTime, stop: DateTime)
-    final case class FreeRoom(number: String, start: DateTime)
+    final case class BookRoom(number: String, start: Long, stop: Long)
+    final case class FreeRoom(number: String, start: Long)
     final case class DeleteRoom(number: String)
 }
 
@@ -31,7 +31,7 @@ case object InModels {
 
 case object OutModels {
     // Helpers
-    final case class Booking(start: DateTime, stop: DateTime, userEmail: String)
+    final case class Booking(start: Long, stop: Long, userEmail: String)
     
     // Messages
     sealed trait MessageWithCode
@@ -40,11 +40,11 @@ case object OutModels {
     
     // User
     final case class GetUser(email: String, name: String, isAdmin: Boolean)
-    final case class GetUsers(users: List[GetUser])
+    final case class GetUsers(users: Set[GetUser])
     
     // Room
-    final case class GetRoom(number: String, bookings: List[OutModels.Booking])
-    final case class GetRooms(rooms: List[GetRoom])
+    final case class GetRoom(number: String, bookings: Set[OutModels.Booking])
+    final case class GetRooms(rooms: Set[GetRoom])
 }
 
 // DB MODELS
@@ -55,7 +55,7 @@ case object DbModels {
     
     // Real data
     final case class User(email: String, passHash: String, name: String, isAdmin: Boolean)
-    final case class Room(number: String, bookings: List[DbModels.Booking])
+    final case class Room(number: String, bookings: Set[DbModels.Booking])
 }
 
 // ERRORS
