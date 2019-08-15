@@ -43,14 +43,14 @@ object DbRoom {
     implicit val formats: DefaultFormats.type = DefaultFormats
     val roomsCollection: MongoCollection[Document] = MongoFactory.database.getCollection("rooms")
     
+    val settings: JsonWriterSettings = JsonWriterSettings.builder()
+        .int64Converter((v, writer) => writer.writeNumber(v.toString)).build()
+    
     def GetRoom(number: String): Future[Either[ErrorType, Room]] = {
         val documentsSeqFuture: Future[Seq[Document]] = roomsCollection.find(equal("number", number)).toFuture()
         documentsSeqFuture.map{
             case Seq() => Left(NotFound)
             case value: Seq[Document] =>
-                val settings: JsonWriterSettings = JsonWriterSettings.builder()
-                    .int64Converter((v, writer) => writer.writeNumber(v.toString)).build()
-                
                 val json = value.head.toJson(settings)
                 val dbRoom = parse(json).extract[DbRoom]
                 Right(Converter.DbRoomToRoom(dbRoom))
@@ -64,7 +64,7 @@ object DbRoom {
             case Seq() => Right(Set[Room]())
             case documents: Seq[Document] =>
                 val dbRoomsSet: Set[DbRoom] = documents.map{ doc =>
-                    parse(doc.toJson).extract[DbRoom] // Convert Documents from Seq to DbRoom Objects
+                    parse(doc.toJson(settings)).extract[DbRoom] // Convert Documents from Seq to DbRoom Objects
                 }.toSet // and create Set of DbRoom's
                 Right(dbRoomsSet.map(Converter.DbRoomToRoom)) // Then convert all DbRoom's to Room's
         }.recover{
